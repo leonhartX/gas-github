@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "Google App Script Github 助手"
+  },
+  "appDesc": {
+    "message": "使用Github或Github Enterprise管理GAS的inline代码"
+  }
+}

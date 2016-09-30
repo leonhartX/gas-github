@@ -1,0 +1,44 @@
+<html>
+  <head>
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="options.css">
+    <script src="../lib/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="options.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="form">
+        <div class="logout-container">
+          <h2>Logged in as: <a target="_blank" id="login-user">XXX</a></h2>
+          <button id="logout">logout</button>
+          <p class="warning">After logout, remember to delete the <a id="token" href="#">access token</a></p>
+        </div>
+        <div class="login-container">
+          <div class="login-item login-item-basic">
+            <input id="username" type="text" placeholder="username"/>
+            <input id="password" type="password" placeholder="password"/>
+          </div>
+          <div class="login-item login-item-otp">
+            <input id="otp" type="text" placeholder="authentication code">
+          </div>
+          <button id="login">github login</button>
+          <p class="message">Using Github Enterprise? <a href="#">Login to Github Enterprise</a></p>
+          <p class="error" style="display: none">Can not create access token, please check your username and password.</p>
+        </div>
+        <div class="login-container ghe-login-container">
+          <div class="login-item login-item-basic">
+            <input id="ghe-url" type="text" placeholder="https://your-github-enterprise.com"/>
+            <input id="ghe-username" type="text" placeholder="username"/>
+            <input id="ghe-password" type="password" placeholder="password"/>            
+          </div>
+          <div class="login-item login-item-otp">
+            <input id="ghe-otp" type="text" placeholder="authentication code">
+          </div>
+          <button id="ghe-login">github enterprise login</button>
+          <p class="message">Using Github.com? <a href="#">Login to Github.com</a></p>
+          <p class="error" style="display: none">Can not create access token, please check your GHE domain, username and password.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

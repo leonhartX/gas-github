@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "Google App Script Github Assistant"
+  },
+  "appDesc": {
+    "message": "Manage your gas code with github(or github enterprise)"
+  }
+}

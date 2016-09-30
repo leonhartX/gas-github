@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "Google App Script Github アシスタント"
+  },
+  "appDesc": {
+    "message": "GithubとGithub EnterpriseでGASのインラインコードを管理"
+  }
+}
