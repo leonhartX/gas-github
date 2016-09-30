@@ -47,8 +47,16 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, callback) => {
-  if (msg.cmd === "request" && msg.param) {
-    requestGapi(msg.param, callback);
+  if (!msg.cmd) return;
+  switch(msg.cmd) {
+    case "request": 
+      if (!msg.param) return;
+      requestGapi(msg.param, callback);
+      return true;//tell sender this will be returned async
+    case "tab":
+      chrome.storage.local.set({tab: sender.tab.id});
+      return;
+    default:
+      return;
   }
-  return true;//tell sender this will be returned async
 });

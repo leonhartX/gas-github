@@ -49,15 +49,16 @@
   "web_accessible_resources": [
     "gas-hub.js",
     "options/options.html",
-    "content/buttons.html",
-    "content/model.html",
-    "content/alert.html"
+    "content/button.html",
+    "content/modal.html",
+    "content/menu.html",
+    "content/login.html"
   ],
   "permissions": [
     "https://*/",
-    "webRequest",
     "storage",
     "declarativeContent",
-    "identity"
+    "identity",
+    "tabs"
   ]
 }
