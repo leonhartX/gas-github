@@ -34,13 +34,40 @@ const CREATE_FUNC = {
 //   }
 // });
 
+function setObserver() {
+  return new Promise((resolve, reject) => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        const target = $(mutation.target);
+        if (target.hasClass('item selected')) {
+          context.current = target.text();
+          context.file = context.bindFile[context.id][context.current];
+          $('#github-bind-file').text(`File: ${file}`);
+          console.log(context.current);
+        }
+      });
+    });
+    const config = { attributes: true, attributeFilter:['class'], subtree: true, attributeOldValue: true };
+    const checkMenu = setInterval(() => {
+      if ($('.project-items-list').length > 0) {
+        observer.observe($('.project-items-list')[0], config);
+        clearInterval(checkMenu);
+        resolve();
+      }
+    }, 1000);
+  });
+}
+
 $(() => {
+  
+
   initContext()
   .then(initPageContent)
   .then(getGithubRepos)
   .then(updateRepo)
   .then(updateBranch)
   .then(updateFile)
+  .then(setObserver)
   .catch((err) => {
     switch (err.message) {
       case "need login" :
@@ -53,7 +80,7 @@ $(() => {
         break;
     }
   });
-  //bind ui event handler
+  //bind global ui event handler
   $(document).mouseup((event) => {
     ['repo', 'branch', 'file'].forEach((type) => {
       const container = $(`.${type}-menu`);
@@ -68,17 +95,93 @@ $(() => {
     });
   });
 
-  $(document).on('click', `#test`, (event) => {
-    chrome.runtime.sendMessage({
-      cmd: "request",
-      param : {
-        path: 'drive/v3/files'
-      }
-    }, (response) => {
-      console.log(response);
-    });
+  $(document).on('mouseover', '.github-item', (event) => {
+    let target = $(event.target);
+    if (!target.hasClass('github-item')) {
+      target = target.parent('.github-item');
+    }
+    target.addClass('goog-menuitem-highlight');
   });
 
+  $(document).on('mouseleave', '.github-item', (event) => {
+    let target = $(event.target);
+    if (!target.hasClass('github-item')) {
+      target = target.parent('.github-item');
+    }
+    target.removeClass('goog-menuitem-highlight');
+  });
+
+  $(document).on('click', `#test`, (event) => {
+    // chrome.runtime.sendMessage({
+    //   cmd: "request",
+    //   param : {
+    //     path: 'drive/v3/files'
+    //   }
+    // }, (response) => {
+    //   console.log(response);
+    // });
+    // $.get(chrome.runtime.getURL('content/modal.html'))
+    // .then((content) => {
+    //   $('body').children().last().after(content);
+    // });
+  });
+
+  $(document).on('cssClassChanged', '.item', (event) => {
+    console.log(event.target);
+  })
+
+  $(document).on('click', '.gwt-TabLayoutPanelTabs', (event) => {
+    console.log(event);
+  })
+
+  $(document).on('click', '.github-item', (event) => {
+    let target = $(event.target);
+    if (!target.hasClass('goog-menuitem-content')) {
+      target = target.children();
+    }
+    const type = target.attr('github-content');
+    let content;
+    let label;
+    switch (type) {
+      case 'repo' :
+        if (context.repo && target.text() === context.repo.name) return;
+        //update context.repo with name and fullName
+        const name = target.text();
+        const fullName = target.attr('data');
+        content = {
+          name: name,
+          fullName : fullName
+        }
+        label = name;
+        break;
+      case 'branch' :
+        if (context[type] && target.text() === context[type]) return;
+        content = target.text();
+        label = target.text();
+        break;
+      case 'file' :
+        const current = $('.item.selected').text();
+        if(context.file && context.file[current] && target.text() == context.file[current]) return;
+        content = typeof(context.file) === 'object'? context.file : {};
+        Object.assign(content, { [current]: target.text() });
+        label = target.text();
+        break;
+      default:
+        return;
+    } 
+    context[type] = content;
+    const bindName = `bind${type.capitalize()}`;
+    Object.assign(context[bindName], { [context.id] : content });
+    chrome.storage.sync.set({ [bindName]: context[bindName] }, () => {
+      $(`#${type}Select`).removeClass('goog-toolbar-menu-button-open');
+      $(`.${type}-menu`).hide();
+      $(`#github-bind-${type}`).text(`${type.capitalize()}: ${label}`);
+      if (type === 'repo') {
+        updateBranch().then(updateFile);
+      }
+    });
+  });
+ 
 /*
   $.ajaxSetup({ cache: false });
   ['repo', 'branch', 'file'].forEach((type) => {
@@ -120,64 +223,6 @@ $(() => {
     } else {
       window.open(chrome.runtime.getURL('options/options.html'));
     }
-  });
-
-  $(document).on('click', '.github-repo', (event) => {
-    if (context.repo && event.target.text === context.repo.name) return;
-    //update context.repo with name and fullName
-    const name = event.target.text;
-    const fullName = event.target.attributes.data.value;
-    const repo = {
-      name: name,
-      fullName : fullName
-    }
-    context.repo = repo;
-    Object.assign(context.bindRepo, { [context.id] : repo });
-    if (context.bindBranch[context.id]) {
-      delete context.bindBranch[context.id];
-    }
-    if (context.bindFile[context.id]) {
-      delete context.bindFile[context.id];
-    }
-    chrome.storage.sync.set({ bindRepo: context.bindRepo }, () => {
-      $('#github-bind-repo').text(`Repo: ${name}`);
-      $('.github-repo-dropdown').hide();
-      updateBranch()
-      .then(updateFile);
-    });
-  });
-  $(document).on('click', '.github-branch', (event) => {
-    if (context.branch && event.target.text === context.branch) return;
-    //update context.branch and save to storage
-    const branch = event.target.text;
-    context.branch = branch;
-    Object.assign(context.bindBranch, { [context.id] : branch });
-    chrome.storage.sync.set({ bindBranch: context.bindBranch }, () => {
-      $('#github-bind-branch').text(`Branch: ${branch}`);
-      $('.github-branch-dropdown').hide();
-    });
-  });
-  $(document).on('click', '.github-file', (event) => {
-    if (context.file && event.target.text === context.file) return;
-    //update context.file and save to storage
-    const file = event.target.text;
-    context.file = file;
-    Object.assign(context.bindFile, { [context.id] : file });
-    chrome.storage.sync.set({ bindFile: context.bindFile }, () => {
-      $('#github-bind-file').text(`File: ${file}`);
-      $('.github-file-dropdown').hide();
-    });
-  });
-
-  $(document).mouseup((event) => {
-    ['repo', 'branch', 'file'].forEach((type) => {
-      const container = $(`.github-${type}-dropdown`);
-      if (!container.is(event.target) 
-        && !$(`#github-${type}-repo`).is(event.target)
-        && container.has(event.target).length === 0) {
-        container.hide();
-      }
-    });
   });
 */
 });
@@ -571,7 +616,7 @@ function initPageContent() {
       $(`#${type}Select`).click(() => {
         $(`#${type}Select`).toggleClass('goog-toolbar-menu-button-open');
         $(`.${type}-menu`).css("left", $(`#${type}Select`).position().left + 55).toggle();
-      });     
+      });
     });
     ['pull', 'push'].forEach((type) => {
       $(`#${type}Button`).hover(() => {
@@ -607,26 +652,13 @@ function initLoginContent() {
 function updateRepo(repos) {
   $('.repo-menu').empty().append('<div class="goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
   repos.forEach((repo) => {
-    let content = `<div class="repo-item goog-menuitem"><div class="goog-menuitem-content" data="${repo.fullName}">${repo.name}</div></div>`
+    let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="repo" data="${repo.fullName}">${repo.name}</div></div>`
     $('.repo-menu').append(content);
   });
   if (context.repo) {
     $('#github-bind-repo').text(`Repo: ${context.repo.name}`);
     return context.repo.name;
   }
-  $('.repo-item').hover((event) => {
-    let target = $(event.target);
-    if (!target.hasClass('repo-item')) {
-      target = target.parent('.repo-item');
-    }
-    target.addClass('goog-menuitem-highlight');
-  }, (event) => {
-    let target = $(event.target);
-    if (!target.hasClass('repo-item')) {
-      target = target.parent('.repo-item');
-    }
-    target.removeClass('goog-menuitem-highlight');
-  });
   return null;
 }
 
@@ -639,10 +671,10 @@ function updateBranch() {
     { access_token: accessToken }
   )
   .done((branches) => {
-    $('#github-branches').empty().append('<li><a id="github-new-branch">Create new branch</a></li>');
+    $('.branch-menu').empty().append('<div class="goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
     branches.forEach((branch) => {
-      let content = `<li><a class="github-branch" data=${branch.name}>${branch.name}</a></li>`
-      $('#github-branches').append(content);
+      let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="branch" data="${branch.name}">${branch.name}</div></div>`
+      $('.branch-menu').append(content);
     });
     let branch = context.bindBranch[context.id];
     if (!branch && branches.length === 0) {
@@ -675,20 +707,21 @@ function updateFile() {
     );   
   })
   .then((trees) => {
-    $('#github-files').empty().append('<li><a id="github-new-file">Create new file</a></li>');
+    $('.file-menu').empty().append('<div class="goog-menuitem"><div class="goog-menuitem-content">Create new file</div></div>');
     trees.tree.forEach((file) => {
       if (file.type !== 'blob') return;
-      let content = `<li><a class="github-file" data=${file.path}>${file.path}</a></li>`
-      $('#github-files').append(content);
+      let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="file" data="${file.path}">${file.path}</div></div>`
+      $('.file-menu').append(content);
     });
-    let file = context.bindFile[context.id];
+    const current = $('.item.selected').text();
+    let file = context.bindFile[context.id][current];
     if (!file || $.inArray(file, trees.tree.map(tree => tree.path)) < 0) {
-      file = context.current.runtime.indexOf("nodejs") >= 0 ? "index.js" : "index.py";
+      file = "agg.gs";
     }
     $('#github-bind-file').text(`File: ${file}`);
     //update context and storage
     context.file = file;
-    Object.assign(context.file, { [context.id] : file });
+    Object.assign(context.bindFile[context.id], { [current]: file });
     chrome.storage.sync.set({ bindFile: context.bindFile });
     return file;
   })
@@ -723,4 +756,8 @@ function showAlert(message, level=LEVEL_INFO) {
   .then((content) => {
     $('.content').before(content.replace(/_INFO_/g, level).replace(/_MESSAGE_/, message));
   });
+}
+
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
 }
