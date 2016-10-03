@@ -6,67 +6,15 @@ const LEVEL_WARN = "warning";
 const LEVEL_INFO = "info";
 const CREATE_FUNC = {
   repo : githubCreateRepo,
-  branch : githubCreateBranch,
-  file : githubCreateFile
+  branch : githubCreateBranch
 };
 
-// chrome.runtime.onMessage.addListener(() => {
-//   if ($('.github').length === 0) {
-//     initContext()
-//     .then(initLambdaList)
-//     .then(initPageContent)
-//     .then(getGithubRepos)
-//     .then(updateRepo)
-//     .then(updateBranch)
-//     .then(updateFile)
-//     .catch((err) => {
-//       switch (err.message) {
-//         case "need login" :
-//           initLoginContent();
-//           break;
-//         case "nothing" :
-//           break;
-//         default:
-//           showAlert("Unknow Error", LEVEL_ERROR);
-//           break;
-//       }
-//     });
-//   }
-// });
-
-function setObserver() {
-  return new Promise((resolve, reject) => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        const target = $(mutation.target);
-        if (target.hasClass('item selected')) {
-          context.current = target.text();
-          context.file = context.bindFile[context.id][context.current];
-          $('#github-bind-file').text(`File: ${file}`);
-          console.log(context.current);
-        }
-      });
-    });
-    const config = { attributes: true, attributeFilter:['class'], subtree: true, attributeOldValue: true };
-    const checkMenu = setInterval(() => {
-      if ($('.project-items-list').length > 0) {
-        observer.observe($('.project-items-list')[0], config);
-        clearInterval(checkMenu);
-        resolve();
-      }
-    }, 1000);
-  });
-}
-
 $(() => {
-  
-
   initContext()
   .then(initPageContent)
   .then(getGithubRepos)
   .then(updateRepo)
   .then(updateBranch)
-  .then(updateFile)
   .then(setObserver)
   .catch((err) => {
     switch (err.message) {
@@ -82,7 +30,7 @@ $(() => {
   });
   //bind global ui event handler
   $(document).mouseup((event) => {
-    ['repo', 'branch', 'file'].forEach((type) => {
+    ['repo', 'branch'].forEach((type) => {
       const container = $(`.${type}-menu`);
       const button = $(`#${type}Select`);
       if (!container.is(event.target) 
@@ -112,10 +60,12 @@ $(() => {
   });
 
   $(document).on('click', `#test`, (event) => {
+    showDiff(true,null);
     // chrome.runtime.sendMessage({
     //   cmd: "request",
     //   param : {
-    //     path: 'drive/v3/files'
+    //     path: `drive/v3/files/${context.id}/export`,
+    //     params: { mimeType: 'application/vnd.google-apps.script+json' }
     //   }
     // }, (response) => {
     //   console.log(response);
@@ -125,14 +75,6 @@ $(() => {
     //   $('body').children().last().after(content);
     // });
   });
-
-  $(document).on('cssClassChanged', '.item', (event) => {
-    console.log(event.target);
-  })
-
-  $(document).on('click', '.gwt-TabLayoutPanelTabs', (event) => {
-    console.log(event);
-  })
 
   $(document).on('click', '.github-item', (event) => {
     let target = $(event.target);
@@ -159,13 +101,6 @@ $(() => {
         content = target.text();
         label = target.text();
         break;
-      case 'file' :
-        const current = $('.item.selected').text();
-        if(context.file && context.file[current] && target.text() == context.file[current]) return;
-        content = typeof(context.file) === 'object'? context.file : {};
-        Object.assign(content, { [current]: target.text() });
-        label = target.text();
-        break;
       default:
         return;
     } 
@@ -177,95 +112,60 @@ $(() => {
       $(`.${type}-menu`).hide();
       $(`#github-bind-${type}`).text(`${type.capitalize()}: ${label}`);
       if (type === 'repo') {
-        updateBranch().then(updateFile);
+        updateBranch();
       }
     });
   });
- 
-/*
-  $.ajaxSetup({ cache: false });
-  ['repo', 'branch', 'file'].forEach((type) => {
-    $(document).on('click', `#github-bind-${type}`, (event) => {
-      $(`.github-${type}-dropdown`).show();
-    });
-    $(document).on('click', `#github-new-${type}`, (event) => { 
-      showCreateContent(type) 
-    });
-    $(document).on('input propertychange', `#new-${type}-name`, (event) => {
-      changeButtonState(type, event.target.value);
-    });
-    $(document).on('click', `.github-${type}-model-dismiss`, (event) => {
-      changeModelState(type, false);
-    });
-    $(document).on('click', `#github-create-${type}`, (event) => {
-      changeModelState(type, false);
-      CREATE_FUNC[type]();
-    });
-  })
-
-  $(document).on('click', '.github-diff-model-dismiss', () => {
-    changeModelState('diff', false);
-  })
-
-  $(document).on('click', '.github-alert-dismiss', () => {
-    $(event.target).parents('.github-alert').remove();
-  });
-
-  $(document).on('click', '#github-pull', () => {
-    showDiff('Pull', githubPull);
-  });
-  $(document).on('click', '#github-push', () => {
-    showDiff('Push', githubPush);
-  });
-  $(document).on('click', '#github-login', (event) => {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL('options/options.html'));
-    }
-  });
-*/
 });
 
 function showDiff(type, handler) {
-  if (type === "Pull" && context.qualifier !== "$LATEST") {
-    showAlert("Pull code is only available to $LATEST.", LEVEL_WARN);
-    return;
-  }
-  return Promise.all([
-    new Promise((resolve, reject) => {
+  let promises = $('.item').toArray().map((e) => {
+    return new Promise((resolve, reject) => {
       $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/contents/${context.file}?ref=${context.branch}`,
-        { access_token: accessToken }
+        `${baseUrl}/repos/${context.repo.fullName}/contents/${e.innerText}`,
+        { ref: context.branch, access_token: accessToken }
       )
       .then((data) => {
-        resolve($.get(data.download_url))
+        return $.get(data.download_url);
+      })
+      .then((content) => {
+        resolve({file : e.innerText, content: content});
       })
       .fail((err) => {
         if (err.status === 404) resolve("");
         else reject(err);
-      })
-    }),
-    $.ajax({
-      url: 'https://' + context.endpoint + '/lambda/services/ajax?operation=getFunctionCode',
-      headers: {
-        "X-Csrf-Token" : context.csrf
-      },
-      method: 'POST',
-      crossDomain: true,
-      dataType: 'json',
-      contentType: 'application/json',
-      data: JSON.stringify({
-        functionName: context.id,
-        qualifier: context.qualifier,
-        operation: "getFunctionCode"
-      })
+      });
+    });
+  });
+  return Promise.all([
+    Promise.all(promises),
+    new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({
+        cmd: "request",
+        param : {
+          path: `drive/v3/files/${context.id}/export`,
+          params: { mimeType: 'application/vnd.google-apps.script+json' }
+        }
+      }, (response) => {
+        resolve(response);
+      });
     })
   ])
   .then((data) => {
+    let github = data[0].reduce((hash, elem) => {
+      if (elem) {
+        hash[elem.file] = elem.content;
+      }
+      return hash;
+    }, {});
+    let gas = data[1].result.files.reduce((hash, file) => {
+      const suffix = file.type === "html" ? "html" : "gs";
+      hash[`${file.name}.${suffix}`] = file.source;
+      return hash;
+    }, {});
     const code = {
-      github: data[0],
-      lambda: data[1].code      
+      github: github,
+      gas: gas     
     }
     if (code.github === "" && type === "Pull") {
       showAlert("There is nothing to pull", LEVEL_WARN);
@@ -468,7 +368,6 @@ function githubCreateRepo() {
   .then(getGithubRepos)
   .then(updateRepo)
   .then(updateBranch)
-  .then(updateFile)
   .then(() => {
     $('#new-repo-name').val("");
     $('#new-repo-desc').val("");
@@ -524,7 +423,6 @@ function githubCreateBranch() {
     return context.repo.name;
   })
   .then(updateBranch)
-  .then(updateFile)
   .then(() => {
     $('#new-branch-name').val("");
     showAlert(`Successfully create new branch: ${branch}`);
@@ -558,7 +456,7 @@ function initContext() {
   context.id = match[1];
 
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["token","user", "baseUrl", "bindRepo", "bindBranch", "bindFile"], (item) => {
+    chrome.storage.sync.get(["token","user", "baseUrl", "bindRepo", "bindBranch"], (item) => {
       if (!item.token) {
         reject(new Error("need login"));
       }
@@ -571,6 +469,28 @@ function initContext() {
       resolve();
     });
   })
+}
+
+function setObserver() {
+  return new Promise((resolve, reject) => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        const target = $(mutation.target);
+        if (target.hasClass('item selected')) {
+          context.file = target.text();
+          console.log(context.file);
+        }
+      });
+    });
+    const config = { attributes: true, attributeFilter:['class'], subtree: true, attributeOldValue: true };
+    const checkMenu = setInterval(() => {
+      if ($('.project-items-list').length > 0) {
+        observer.observe($('.project-items-list')[0], config);
+        clearInterval(checkMenu);
+        resolve();
+      }
+    }, 1000);
+  });
 }
 
 function getGithubRepos() {
@@ -607,7 +527,7 @@ function initPageContent() {
     $('body').children().last().after(content[1]);
   })
   .then(() => {
-    ['repo','branch','file'].forEach((type) => {
+    ['repo','branch'].forEach((type) => {
       $(`#${type}Select`).hover((event) => {
         $(`#${type}Select`).addClass('goog-toolbar-menu-button-hover');
       }, (event) => {
@@ -690,41 +610,6 @@ function updateBranch() {
     chrome.storage.sync.set({ bindBranch: context.bindBranch });
     return branch;
   });
-}
-
-function updateFile() {
-  if (!context.branch) {
-    return null;
-  }
-  return $.getJSON(
-    `${baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
-    { access_token: accessToken }
-  )
-  .then((branch) => {
-     return $.getJSON(
-      `${baseUrl}/repos/${context.repo.fullName}/git/trees/${branch.commit.commit.tree.sha}`,
-      { access_token: accessToken, recursive: 1 }
-    );   
-  })
-  .then((trees) => {
-    $('.file-menu').empty().append('<div class="goog-menuitem"><div class="goog-menuitem-content">Create new file</div></div>');
-    trees.tree.forEach((file) => {
-      if (file.type !== 'blob') return;
-      let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="file" data="${file.path}">${file.path}</div></div>`
-      $('.file-menu').append(content);
-    });
-    const current = $('.item.selected').text();
-    let file = context.bindFile[context.id][current];
-    if (!file || $.inArray(file, trees.tree.map(tree => tree.path)) < 0) {
-      file = "agg.gs";
-    }
-    $('#github-bind-file').text(`File: ${file}`);
-    //update context and storage
-    context.file = file;
-    Object.assign(context.bindFile[context.id], { [current]: file });
-    chrome.storage.sync.set({ bindFile: context.bindFile });
-    return file;
-  })
 }
 
 function changeModelState(type, toShow) {
