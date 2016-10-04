@@ -59,6 +59,8 @@
     "storage",
     "declarativeContent",
     "identity",
-    "tabs"
+    "tabs",
+    "webRequest",
+    "webRequestBlocking"
   ]
 }

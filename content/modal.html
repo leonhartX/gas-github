@@ -1,17 +1,15 @@
-<div class="modal-dialog-bg" style="opacity: 0.5; width: 1234px; height: 983px;" aria-hidden="true"></div>
-<div id="diffModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px;">
+<div id="diffModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 180px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Diff</span>
-    <span class="modal-dialog-title-close"></span>
+    <span class="github-diff-modal-close modal-dialog-title-close"></span>
   </div>
   <div class="modal-dialog-content">
     <div class="goog-inline-block script-logging-dialog">
-      <textarea readonly="" class="script-logging-dialog-content">
-        Test
-      </textarea>
+      <div class="github-diff" style="overflow-y: auto; max-height:500px">
+      </div>
     </div>
   </div>
-  <div class="modal-dialog-buttons">
+  <div class="github-modal-button modal-dialog-buttons">
     <button name="ok" class="goog-buttonset-default">OK</button>
   </div>
 </div>

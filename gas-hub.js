@@ -24,6 +24,7 @@ $(() => {
       case "nothing" :
         break;
       default:
+        console.log(err);
         // showAlert("Unknow Error", LEVEL_ERROR);
         break;
     }
@@ -59,8 +60,14 @@ $(() => {
     target.removeClass('goog-menuitem-highlight');
   });
 
+  $(document).on('click', `.github-diff-modal-close`, (event) => {
+    changeModalState("diff", false);
+  });
+
   $(document).on('click', `#test`, (event) => {
-    showDiff(true,null);
+    initProjectContext()
+    .then(prepareCode)
+    .then((data) => showDiff(data, 'Pull',null));
     // chrome.runtime.sendMessage({
     //   cmd: "request",
     //   param : {
@@ -118,91 +125,75 @@ $(() => {
   });
 });
 
-function showDiff(type, handler) {
-  let promises = $('.item').toArray().map((e) => {
-    return new Promise((resolve, reject) => {
-      $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/contents/${e.innerText}`,
-        { ref: context.branch, access_token: accessToken }
-      )
-      .then((data) => {
-        return $.get(data.download_url);
-      })
-      .then((content) => {
-        resolve({file : e.innerText, content: content});
-      })
-      .fail((err) => {
-        if (err.status === 404) resolve("");
-        else reject(err);
-      });
-    });
+function prepareCode() {
+  const files = $('.item').toArray().map((e) => {
+    const fileInfo = e.innerText.split('.');
+    return { 
+      name: fileInfo[0], 
+      type: fileInfo[1] 
+    };
   });
-  return Promise.all([
-    Promise.all(promises),
-    new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({
-        cmd: "request",
-        param : {
-          path: `drive/v3/files/${context.id}/export`,
-          params: { mimeType: 'application/vnd.google-apps.script+json' }
-        }
-      }, (response) => {
-        resolve(response);
+
+  const gasPromises = files.map((file) => {
+    return new Promise((resolve, reject) => {
+      const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|getFileContent|j|${context.fileIds[file.name]}|${context.projectId}|k|1|2|3|4|1|5|5|6|7|8|0|0|`;
+      $.ajax({
+        url: context.gasUrl,
+        headers: context.gasHeaders,
+        method: 'POST',
+        crossDomain: true,
+        data: payload,
+        dataType: 'text'
+      })
+      .then((response) => {
+        if (!response.startsWith('//OK')) throw new Error('Init failed');
+        //evil eval, but it's simple to get the object since it's not valid json object
+        const codeContent = eval(response.slice(4)).filter((e) => {
+          return typeof(e) === 'object';
+        })[0];
+        resolve({file : `${file.name}.${file.type}`, content: codeContent[codeContent.length - 10]});
       });
+    })
+  });
+
+  return Promise.all([
+    Promise.all(gasPromises),
+    $.getJSON(
+      `${baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
+      { access_token: accessToken }
+    )
+    .then((response) => {
+      return $.getJSON(
+        `${baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
+        { recursive: 1, access_token: accessToken }
+      );
+    })
+    .then((response) => {
+      return Promise.all(
+        response.tree.filter((tree) => {
+          return tree.type === 'blob';
+        })
+        .map((tree) => {
+          return $.getJSON(tree.url, {access_token: accessToken })
+          .then((content) => {
+            return { file: tree.path, content: decodeURIComponent(escape(atob(content.content)))};
+          });
+        })
+      );
     })
   ])
   .then((data) => {
-    let github = data[0].reduce((hash, elem) => {
-      if (elem) {
-        hash[elem.file] = elem.content;
-      }
-      return hash;
-    }, {});
-    let gas = data[1].result.files.reduce((hash, file) => {
-      const suffix = file.type === "html" ? "html" : "gs";
-      hash[`${file.name}.${suffix}`] = file.source;
-      return hash;
-    }, {});
     const code = {
-      github: github,
-      gas: gas     
+      gas: data[0].reduce((hash, elem) => {
+        if (elem) hash[elem.file] = elem.content;
+        return hash;
+      }, {}),
+      github: data[1].reduce((hash, elem) => {
+        if (elem) hash[elem.file] = elem.content;
+        return hash;
+      }, {})
     }
-    if (code.github === "" && type === "Pull") {
-      showAlert("There is nothing to pull", LEVEL_WARN);
-      return;
-    }
-    //setting the diff model
-    const oldCode = type === "Push" ? code.github : code.lambda;
-    const newCode = type === "Push" ? code.lambda : code.github;
-    const diff = JsDiff.createPatch(context.file, oldCode, newCode);
-    const diffHtml = new Diff2HtmlUI({diff : diff});
-    diffHtml.draw('.github-diff', {inputFormat: 'json', showFiles: false});
-    diffHtml.highlightCode('.github-diff');
-    $('#commit-comment').off().val("");
-    $('#github-diff-handler').prop("disabled", false).removeClass('awsui-button-disabled');
-    if (oldCode === newCode) {
-      $('#github-diff-handler').prop("disabled", true).addClass('awsui-button-disabled');
-      $('.github-comment').hide();
-    } else {
-      if (type === 'Push') { //push must have commit comment
-        $('.github-comment').show();
-        $('#github-diff-handler').prop("disabled", true).addClass('awsui-button-disabled');
-        $('#commit-comment').on('input propertychange', (event) => {
-          if (event.target.value === "") {
-            $(`#github-diff-handler`).prop("disabled", true).addClass('awsui-button-disabled');
-          } else {
-            $(`#github-diff-handler`).prop("disabled", false).removeClass('awsui-button-disabled');
-          }
-        });
-      } else {
-        $('.github-comment').hide();
-      }
-    }
-    $('#github-diff-handler').text(type).off().click(() => {
-      changeModelState('diff', false);
-      handler(code);
-    });
-    changeModelState('diff', true);
+    return code;
   })
   .catch((err) => {
     if (!context.repo || !context.branch) {
@@ -211,6 +202,69 @@ function showDiff(type, handler) {
       showAlert("Unknow error.", LEVEL_ERROR);
     }
   })
+}
+
+function showDiff(code, type, handler) {
+  if (Object.keys(code.github).length === 0 && type === "Pull") {
+    showAlert("There is nothing to pull", LEVEL_WARN);
+    return;
+  }
+  //setting the diff model
+  const oldCode = type === "Push" ? code.github : code.gas;
+  const newCode = type === "Push" ? code.gas : code.github;
+  const gasFiles = Object.keys(code.gas);
+  const githubFiles = Object.keys(code.github);
+  let diff = gasFiles.concat(githubFiles.filter((e) => {
+    return gasFiles.indexOf(e) < 0;
+  }))
+  .reduce((diff, file) => {
+    let mode = null;
+    if (!oldCode[file]) {
+      mode = 'new file mode 100644';
+    } else if (!newCode[file]) {
+      mode = 'deleted file mode 100644';
+    }
+    let fileDiff = JsDiff.createPatch(file, oldCode[file] || "", newCode[file] || "");
+    let diffArr = fileDiff.split('\n');
+    if (mode) {
+      diffArr.splice(0, 2, `diff --git a/${file} b/${file}`, mode);
+    }
+    else {
+      diffArr.splice(0, 2, `diff --git a/${file} b/${file}`);
+    }
+    fileDiff = diffArr.join('\n');   
+    return diff + fileDiff;
+  }, "");
+  console.log(diff);
+  const diffHtml = new Diff2HtmlUI({diff : diff});
+  diffHtml.draw('.github-diff', {inputFormat: 'json', showFiles: false});
+  diffHtml.highlightCode('.github-diff');
+  // $('#commit-comment').off().val("");
+  // $('#github-diff-handler').prop("disabled", false).removeClass('awsui-button-disabled');
+  // if (oldCode === newCode) {
+  //   $('#github-diff-handler').prop("disabled", true).addClass('awsui-button-disabled');
+  //   $('.github-comment').hide();
+  // } else {
+  //   if (type === 'Push') { //push must have commit comment
+  //     $('.github-comment').show();
+  //     $('#github-diff-handler').prop("disabled", true).addClass('awsui-button-disabled');
+  //     $('#commit-comment').on('input propertychange', (event) => {
+  //       if (event.target.value === "") {
+  //         $(`#github-diff-handler`).prop("disabled", true).addClass('awsui-button-disabled');
+  //       } else {
+  //         $(`#github-diff-handler`).prop("disabled", false).removeClass('awsui-button-disabled');
+  //       }
+  //     });
+  //   } else {
+  //     $('.github-comment').hide();
+  //   }
+  // }
+  $('#github-diff-handler').text(type).off().click(() => {
+    changeModalState('diff', false);
+    handler(code);
+  });
+  // $('#diffModal').show();
+  changeModalState('diff', true);
 }
 
 function githubPull(data) {
@@ -446,7 +500,7 @@ function githubCreateFile() {
 
 function showCreateContent(type) {
   $(`.github-${type}-dropdown`).hide();
-  changeModelState(type, true);
+  changeModalState(type, true);
 }
 
 function initContext() {
@@ -493,6 +547,53 @@ function setObserver() {
   });
 }
 
+/*
+ * get project context with google rpc
+ * this is very volatile since it is juse inferred from code
+ */
+function initProjectContext() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['requestUrl' ,'requestHeaders', 'requestBody', 'gasToken'], resolve);
+  })
+  .then((param) => {
+    context.gasUrl = param.requestUrl;
+    context.gasHeaders = param.requestHeaders;
+    context.gasToken = param.gasToken;
+    return $.ajax({
+      url: param.requestUrl,
+      headers: param.requestHeaders,
+      method: 'POST',
+      crossDomain: true,
+      data: param.requestBody,
+      dataType: 'text'
+    })
+  })
+  .then((response) => {
+    if (!response.startsWith('//OK')) throw new Error('Init failed');
+    //evil eval, but it's simple to get the object since it's not valid json object
+    const initData = eval(response.slice(4)).filter((e) => {
+      return typeof(e) === 'object';
+    })[0];
+    let found = false;
+    let projectId;
+    let fileIds = {};
+    for (let i = 0; i < initData.length; i++) {
+      if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(initData[i])) { //get file id;
+        if (!found) { //the first file
+          found = true;
+          projectId = initData[i + 1]; //id is the next one of the first file id
+          fileIds[initData[i - 2]] = initData[i];
+        } else {
+          fileIds[initData[i - 1]] = initData[i];
+        }
+      }
+    }
+    context.projectId = projectId;
+    context.fileIds = fileIds;
+    console.log(context);
+  });
+}
+
 function getGithubRepos() {
   return $.ajax({
     url: `${baseUrl}/user/repos`,
@@ -520,11 +621,13 @@ function getGithubRepos() {
 function initPageContent() {
   return Promise.all([
     $.get(chrome.runtime.getURL('content/button.html')),
-    $.get(chrome.runtime.getURL('content/menu.html'))
+    $.get(chrome.runtime.getURL('content/menu.html')),
+    $.get(chrome.runtime.getURL('content/modal.html'))
   ])
   .then((content) => {
     $('#functionSelect').after(content[0]);
     $('body').children().last().after(content[1]);
+    $('body').children().last().after(content[2]);
   })
   .then(() => {
     ['repo','branch'].forEach((type) => {
@@ -612,18 +715,17 @@ function updateBranch() {
   });
 }
 
-function changeModelState(type, toShow) {
-  const index = toShow ? 0 : -1;
-  const fromClass = toShow ? 'hidden' : 'fadeIn';
-  const trasnferClass = toShow ? 'fadeIn' : 'fadeOut';
-  const toClass = toShow ? 'showing' : 'hidden';
-  $(`.github-${type}-model`).removeClass(`awsui-modal-__state-${fromClass}`).addClass(`awsui-modal-__state-${trasnferClass}`);
-  setTimeout(() => {
-    $(`.github-${type}-model`).removeClass(`awsui-modal-__state-${trasnferClass}`).addClass(`awsui-modal-__state-${toClass}`);
-  },
-  1000
-  );
-  $(`.github-${type}-modal-dialog`).attr('tabindex', index);
+function changeModalState(type, toShow) {
+  if (toShow) {
+    const width = $('body').width();
+    const height = $('body').height();
+    const left = (width - 600) / 2
+    $(`#${type}Modal`).before(`<div class="github-modal-bg modal-dialog-bg" style="opacity: 0.5; width: ${width}px; height: ${height}px;" aria-hidden="true"></div>`);
+    $(`#${type}Modal`).css("left", left).show();
+  } else {
+    $(`#${type}Modal`).hide();
+    $('.github-modal-bg').remove();
+  }
 }
 
 function changeButtonState(type, value) {
