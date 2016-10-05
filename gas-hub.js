@@ -1,13 +1,9 @@
 "use strict";
 let context = {};
 let baseUrl, accessToken, user;
-const LEVEL_ERROR = "error";
-const LEVEL_WARN = "warning";
-const LEVEL_INFO = "info";
-const CREATE_FUNC = {
-  repo : githubCreateRepo,
-  branch : githubCreateBranch
-};
+const LEVEL_ERROR = "warning";
+const LEVEL_WARN = "info";
+const LEVEL_INFO = "promo";
 
 $(() => {
   initContext()
@@ -15,7 +11,7 @@ $(() => {
   .then(getGithubRepos)
   .then(updateRepo)
   .then(updateBranch)
-  .then(setObserver)
+  .then(initPageEvent)
   .catch((err) => {
     switch (err.message) {
       case "need login" :
@@ -25,10 +21,93 @@ $(() => {
         break;
       default:
         console.log(err);
-        // showAlert("Unknow Error", LEVEL_ERROR);
+        showAlert("Unknow Error", LEVEL_ERROR);
         break;
     }
   });
+});
+
+function setObserver() {
+  return new Promise((resolve, reject) => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        const target = $(mutation.target);
+        if (target.hasClass('item selected')) {
+          context.file = target.text();
+          console.log(context.file);
+        }
+      });
+    });
+    const config = { attributes: true, attributeFilter:['class'], subtree: true, attributeOldValue: true };
+    const checkMenu = setInterval(() => {
+      if ($('.project-items-list').length > 0) {
+        observer.observe($('.project-items-list')[0], config);
+        clearInterval(checkMenu);
+        resolve();
+      }
+    }, 1000);
+  });
+}
+
+function initContext() {
+  context = {};
+  const match = window.location.href.match(/https:\/\/script\.google\.com.*?\/d\/([^/]*)\//);
+  if (!match) return null;
+  context.id = match[1];
+
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(["token","user", "baseUrl", "bindRepo", "bindBranch"], (item) => {
+      if (!item.token) {
+        reject(new Error("need login"));
+      }
+      accessToken = item.token;
+      user = item.user;
+      baseUrl = item.baseUrl;
+      context.bindRepo = item.bindRepo || {};
+      context.bindBranch = item.bindBranch || {};
+      context.bindFile = item.bindFile || {};
+      resolve();
+    });
+  })
+}
+
+function initPageContent() {
+  return Promise.all([
+    $.get(chrome.runtime.getURL('content/button.html')),
+    $.get(chrome.runtime.getURL('content/menu.html')),
+    $.get(chrome.runtime.getURL('content/modal.html'))
+  ])
+  .then((content) => {
+    $('#functionSelect').after(content[0]);
+    $('body').children().last().after(content[1]);
+    $('body').children().last().after(content[2]);
+  })
+  .then(() => {
+    chrome.runtime.sendMessage({ cmd: "tab" });
+  });
+}
+
+function initLoginContent() {
+  $.get(chrome.runtime.getURL('content/login.html'))
+  .then((content) => {
+    $('#functionSelect').after(content);
+    $('#login').hover(() => {
+      $('#login').addClass('goog-toolbar-menu-button-hover');
+    }, () => {
+      $('#login').removeClass('goog-toolbar-menu-button-hover'); 
+    });
+    $('#login').click(() => {
+      if (chrome.runtime.openOptionsPage) {
+        chrome.runtime.openOptionsPage();
+      } else {
+        window.open(chrome.runtime.getURL('options/options.html'));
+      }  
+    });
+    chrome.runtime.sendMessage({ cmd: "tab" });
+  });
+}
+
+function initPageEvent() {
   //bind global ui event handler
   $(document).mouseup((event) => {
     ['repo', 'branch'].forEach((type) => {
@@ -60,27 +139,53 @@ $(() => {
     target.removeClass('goog-menuitem-highlight');
   });
 
-  $(document).on('click', `.github-diff-modal-close`, (event) => {
-    changeModalState("diff", false);
+  $(document).on('click', `#test`, (event) => {
+    console.log('test');
   });
 
-  $(document).on('click', `#test`, (event) => {
-    initProjectContext()
-    .then(prepareCode)
-    .then((data) => showDiff(data, 'Pull',null));
-    // chrome.runtime.sendMessage({
-    //   cmd: "request",
-    //   param : {
-    //     path: `drive/v3/files/${context.id}/export`,
-    //     params: { mimeType: 'application/vnd.google-apps.script+json' }
-    //   }
-    // }, (response) => {
-    //   console.log(response);
-    // });
-    // $.get(chrome.runtime.getURL('content/modal.html'))
-    // .then((content) => {
-    //   $('body').children().last().after(content);
-    // });
+  ['repo', 'branch'].forEach((type) => {
+    $(document).on('click', `.github-new-${type}`, () => {
+      $(`.${type}-menu`).hide();
+      changeModalState(type, true);
+    });
+    $(document).on('input propertychange', `#new-${type}-name`, (event) => {
+      changeButtonState(type, event.target.value);
+    });
+    $(document).on('mouseover', `#${type}Select`, () => {
+      $(`#${type}Select`).addClass('goog-toolbar-menu-button-hover');
+    });
+    $(document).on('mouseleave', `#${type}Select`, () => {
+      $(`#${type}Select`).removeClass('goog-toolbar-menu-button-hover');
+    });
+    $(document).on('click', `#${type}Select`, () => {
+      $(`#${type}Select`).toggleClass('goog-toolbar-menu-button-open');
+      $(`.${type}-menu`).css("left", $(`#${type}Select`).position().left + 55).toggle();
+    });
+    $(document).on('click', `#github-create-${type}`, () => {
+      changeModalState(type, false);
+      window[`githubCreate${type.capitalize()}`]();
+    });
+  });
+
+  ['repo', 'branch', 'diff'].forEach((type) => {
+    $(document).on('click', `.github-${type}-modal-close`, () => {
+      changeModalState(type, false);
+    });
+  });
+
+  ['pull', 'push'].forEach((type) => {
+    $(document).on('mouseover', `#${type}Button`, () => {
+      $(`#${type}Button`).addClass('goog-toolbar-button-hover');
+    });
+    $(document).on('mouseleave', `#${type}Button`, () => {
+      $(`#${type}Button`).removeClass('goog-toolbar-button-hover');
+    });
+    $(document).on('click', `#${type}Button`, () => {
+      initProjectContext()
+      .then(prepareCode)
+      .then((data) => { showDiff.call(window[`github${type.capitalize()}`], data, type) }) //get more performance over callback
+      .catch((err) => { showAlert('Unknow Error') });
+    });
   });
 
   $(document).on('click', '.github-item', (event) => {
@@ -118,12 +223,61 @@ $(() => {
       $(`#${type}Select`).removeClass('goog-toolbar-menu-button-open');
       $(`.${type}-menu`).hide();
       $(`#github-bind-${type}`).text(`${type.capitalize()}: ${label}`);
-      if (type === 'repo') {
-        updateBranch();
-      }
+      if (type === 'repo') updateBranch();
     });
   });
-});
+
+  $(document).on('click', '.github-alert-dismiss', () => {
+    $('.github-alert').remove();
+  });
+}
+
+/*
+ * get project context with google rpc
+ * this is very volatile since it is juse inferred from code
+ */
+function initProjectContext() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['requestUrl' ,'requestHeaders', 'requestBody', 'gasToken'], resolve);
+  })
+  .then((param) => {
+    context.gasUrl = param.requestUrl;
+    context.gasHeaders = param.requestHeaders;
+    context.gasToken = param.gasToken;
+    return $.ajax({
+      url: param.requestUrl,
+      headers: param.requestHeaders,
+      method: 'POST',
+      crossDomain: true,
+      data: param.requestBody,
+      dataType: 'text'
+    })
+  })
+  .then((response) => {
+    if (!response.startsWith('//OK')) throw new Error('Init failed');
+    //evil eval, but it's simple to get the object since it's not valid json object
+    const initData = eval(response.slice(4)).filter((e) => {
+      return typeof(e) === 'object';
+    })[0];
+    let found = false;
+    let projectId;
+    let fileIds = {};
+    for (let i = 0; i < initData.length; i++) {
+      if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(initData[i])) { //get file id;
+        if (!found) { //the first file
+          found = true;
+          projectId = initData[i + 1]; //id is the next one of the first file id
+          fileIds[initData[i - 2]] = initData[i];
+        } else {
+          fileIds[initData[i - 1]] = initData[i];
+        }
+      }
+    }
+    context.projectId = projectId;
+    context.fileIds = fileIds;
+    console.log(context);
+  });
+}
 
 function prepareCode() {
   const files = $('.item').toArray().map((e) => {
@@ -171,7 +325,7 @@ function prepareCode() {
     .then((response) => {
       return Promise.all(
         response.tree.filter((tree) => {
-          return tree.type === 'blob';
+          return tree.type === 'blob' && /(\.gs|\.html)$/.test(tree.path);
         })
         .map((tree) => {
           return $.getJSON(tree.url, {access_token: accessToken })
@@ -204,14 +358,14 @@ function prepareCode() {
   })
 }
 
-function showDiff(code, type, handler) {
-  if (Object.keys(code.github).length === 0 && type === "Pull") {
+function showDiff(code, type) {
+  if (Object.keys(code.github).length === 0 && type === "pull") {
     showAlert("There is nothing to pull", LEVEL_WARN);
     return;
   }
   //setting the diff model
-  const oldCode = type === "Push" ? code.github : code.gas;
-  const newCode = type === "Push" ? code.gas : code.github;
+  const oldCode = type === "push" ? code.github : code.gas;
+  const newCode = type === "push" ? code.gas : code.github;
   const gasFiles = Object.keys(code.gas);
   const githubFiles = Object.keys(code.github);
   let diff = gasFiles.concat(githubFiles.filter((e) => {
@@ -222,79 +376,89 @@ function showDiff(code, type, handler) {
     if (!oldCode[file]) {
       mode = 'new file mode 100644';
     } else if (!newCode[file]) {
-      mode = 'deleted file mode 100644';
+      return diff;
     }
-    let fileDiff = JsDiff.createPatch(file, oldCode[file] || "", newCode[file] || "");
+    let fileDiff = JsDiff.createPatch(file, oldCode[file] || "", newCode[file]);
+    if (fileDiff.indexOf('@@') < 0) return diff; //no diff
     let diffArr = fileDiff.split('\n');
+    diffArr.splice(0, 2, `diff --git a/${file} b/${file}`);
     if (mode) {
-      diffArr.splice(0, 2, `diff --git a/${file} b/${file}`, mode);
-    }
-    else {
-      diffArr.splice(0, 2, `diff --git a/${file} b/${file}`);
+      diffArr.splice(1, 0, mode);
     }
     fileDiff = diffArr.join('\n');   
     return diff + fileDiff;
   }, "");
   console.log(diff);
+
+  if (diff === "") {
+    showAlert("Everything already up-to-date", LEVEL_WARN);
+    return;
+  }
+
   const diffHtml = new Diff2HtmlUI({diff : diff});
   diffHtml.draw('.github-diff', {inputFormat: 'json', showFiles: false});
   diffHtml.highlightCode('.github-diff');
-  // $('#commit-comment').off().val("");
-  // $('#github-diff-handler').prop("disabled", false).removeClass('awsui-button-disabled');
-  // if (oldCode === newCode) {
-  //   $('#github-diff-handler').prop("disabled", true).addClass('awsui-button-disabled');
-  //   $('.github-comment').hide();
-  // } else {
-  //   if (type === 'Push') { //push must have commit comment
-  //     $('.github-comment').show();
-  //     $('#github-diff-handler').prop("disabled", true).addClass('awsui-button-disabled');
-  //     $('#commit-comment').on('input propertychange', (event) => {
-  //       if (event.target.value === "") {
-  //         $(`#github-diff-handler`).prop("disabled", true).addClass('awsui-button-disabled');
-  //       } else {
-  //         $(`#github-diff-handler`).prop("disabled", false).removeClass('awsui-button-disabled');
-  //       }
-  //     });
-  //   } else {
-  //     $('.github-comment').hide();
-  //   }
-  // }
-  $('#github-diff-handler').text(type).off().click(() => {
+  $('#commit-comment').off().val("");
+  $('#github-diff-handler').prop("disabled", false);
+  if (oldCode === newCode) {
+    $('#github-diff-handler').prop("disabled", true);
+    $('.github-comment').hide();
+  } else {
+    if (type === 'push') { //push must have commit comment
+      $('.github-comment').show();
+      $('#github-diff-handler').prop("disabled", true);
+      $('#commit-comment').on('input propertychange', (event) => {
+        if (event.target.value === "") {
+          $(`#github-diff-handler`).prop("disabled", true);
+        } else {
+          $(`#github-diff-handler`).prop("disabled", false);
+        }
+      });
+    } else {
+      $('.github-comment').hide();
+    }
+  }
+  $('#github-diff-handler').text(type.capitalize()).off().click(() => {
     changeModalState('diff', false);
-    handler(code);
+    this(code);
   });
-  // $('#diffModal').show();
   changeModalState('diff', true);
 }
 
-function githubPull(data) {
-  const payload = {
-    operation: "updateFunctionCode",
-    codeSource: "inline",
-    functionName: context.id,
-    handler: context.current.handler,
-    runtime: context.current.runtime,
-    inline: data.github
-  };
-  $.ajax({
-    url: 'https://' + context.endpoint + '/lambda/services/ajax?operation=updateFunctionCode',
-    headers: {
-      "X-Csrf-Token" : context.csrf
-    },
-    method: 'POST',
-    crossDomain: true,
-    contentType: 'application/json',
-    data: JSON.stringify(payload)
+function githubPull(code) {
+  console.log(code);
+  const promises = Object.keys(code.github).map((file) => {
+    const match = file.match(/(.*?)\.(gs|html)$/);
+    if (!match || !match[1] || !match[2]) {
+      showAlert('Unknow Error', LEVEL_ERROR);
+      return;
+    }
+    const name = match[1];
+    const type = match[2];
+    
+    if (!code.gas[file]) {
+      return gasCreateFile(name, type)
+      .then(() => {
+        return gasUpdateFile(name, code.github[file]);
+      })
+    } else {
+      return gasUpdateFile(name, code.github[file]);
+    }
+  });
+  initProjectContext()
+  .then(() => {
+    return Promise.all(promises);
   })
   .then(() => {
+    showAlert("Successfully pulled from github");
     location.reload();
   })
-  .fail((err) => {
-    showAlert("Failed to pull", LEVEL_ERROR);
+  .catch((err) => {
+    showAlert(err.message, LEVEL_ERROR);
   });
 }
 
-function githubPush(data) {
+function githubPush(code) {
   const payload = {
     content: data.lambda,
     encoding: "utf-8"
@@ -384,6 +548,30 @@ function githubPush(data) {
   .catch((err) => {
     showAlert("Failed to push", LEVEL_ERROR);
   });
+}
+
+function getGithubRepos() {
+  return $.ajax({
+    url: `${baseUrl}/user/repos`,
+    headers: {
+      "Authorization": `token ${accessToken}`
+    },
+    method: 'GET',
+    crossDomain: true,
+    dataType: 'json',
+    contentType: 'application/json'
+  })
+  .then((response) => {
+    const repos = response.map((repo) => {
+      return { name : repo.name, fullName : repo.full_name }
+    });
+    //if current bind still existed, use it
+    const repo = context.bindRepo[context.id];
+    if (repo && $.inArray(repo.name, repos.map(repo => repo.name)) >= 0 ) {
+      context.repo = repo;
+    }
+    return repos;
+  })
 }
 
 function githubCreateRepo() {
@@ -486,194 +674,8 @@ function githubCreateBranch() {
   });
 }
 
-function githubCreateFile() {
-  const file = $('#new-file-name').val();
-  if (!file || file === "") return;
-  $('#github-bind-file').text(`File: ${file}`);
-  //update context and storage
-  context.file = file;
-  Object.assign(context.file, { [context.id] : file });
-  chrome.storage.sync.set({ bindFile: context.bindFile }, () => {
-    $('#new-file-name').val("");
-  });
-}
-
-function showCreateContent(type) {
-  $(`.github-${type}-dropdown`).hide();
-  changeModalState(type, true);
-}
-
-function initContext() {
-  context = {};
-  const match = window.location.href.match(/https:\/\/script\.google\.com.*?\/d\/([^/]*)\//);
-  if (!match) return null;
-  context.id = match[1];
-
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["token","user", "baseUrl", "bindRepo", "bindBranch"], (item) => {
-      if (!item.token) {
-        reject(new Error("need login"));
-      }
-      accessToken = item.token;
-      user = item.user;
-      baseUrl = item.baseUrl;
-      context.bindRepo = item.bindRepo || {};
-      context.bindBranch = item.bindBranch || {};
-      context.bindFile = item.bindFile || {};
-      resolve();
-    });
-  })
-}
-
-function setObserver() {
-  return new Promise((resolve, reject) => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        const target = $(mutation.target);
-        if (target.hasClass('item selected')) {
-          context.file = target.text();
-          console.log(context.file);
-        }
-      });
-    });
-    const config = { attributes: true, attributeFilter:['class'], subtree: true, attributeOldValue: true };
-    const checkMenu = setInterval(() => {
-      if ($('.project-items-list').length > 0) {
-        observer.observe($('.project-items-list')[0], config);
-        clearInterval(checkMenu);
-        resolve();
-      }
-    }, 1000);
-  });
-}
-
-/*
- * get project context with google rpc
- * this is very volatile since it is juse inferred from code
- */
-function initProjectContext() {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(['requestUrl' ,'requestHeaders', 'requestBody', 'gasToken'], resolve);
-  })
-  .then((param) => {
-    context.gasUrl = param.requestUrl;
-    context.gasHeaders = param.requestHeaders;
-    context.gasToken = param.gasToken;
-    return $.ajax({
-      url: param.requestUrl,
-      headers: param.requestHeaders,
-      method: 'POST',
-      crossDomain: true,
-      data: param.requestBody,
-      dataType: 'text'
-    })
-  })
-  .then((response) => {
-    if (!response.startsWith('//OK')) throw new Error('Init failed');
-    //evil eval, but it's simple to get the object since it's not valid json object
-    const initData = eval(response.slice(4)).filter((e) => {
-      return typeof(e) === 'object';
-    })[0];
-    let found = false;
-    let projectId;
-    let fileIds = {};
-    for (let i = 0; i < initData.length; i++) {
-      if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(initData[i])) { //get file id;
-        if (!found) { //the first file
-          found = true;
-          projectId = initData[i + 1]; //id is the next one of the first file id
-          fileIds[initData[i - 2]] = initData[i];
-        } else {
-          fileIds[initData[i - 1]] = initData[i];
-        }
-      }
-    }
-    context.projectId = projectId;
-    context.fileIds = fileIds;
-    console.log(context);
-  });
-}
-
-function getGithubRepos() {
-  return $.ajax({
-    url: `${baseUrl}/user/repos`,
-    headers: {
-      "Authorization": `token ${accessToken}`
-    },
-    method: 'GET',
-    crossDomain: true,
-    dataType: 'json',
-    contentType: 'application/json'
-  })
-  .then((response) => {
-    const repos = response.map((repo) => {
-      return { name : repo.name, fullName : repo.full_name }
-    });
-    //if current bind still existed, use it
-    const repo = context.bindRepo[context.id];
-    if (repo && $.inArray(repo.name, repos.map(repo => repo.name)) >= 0 ) {
-      context.repo = repo;
-    }
-    return repos;
-  })
-}
-
-function initPageContent() {
-  return Promise.all([
-    $.get(chrome.runtime.getURL('content/button.html')),
-    $.get(chrome.runtime.getURL('content/menu.html')),
-    $.get(chrome.runtime.getURL('content/modal.html'))
-  ])
-  .then((content) => {
-    $('#functionSelect').after(content[0]);
-    $('body').children().last().after(content[1]);
-    $('body').children().last().after(content[2]);
-  })
-  .then(() => {
-    ['repo','branch'].forEach((type) => {
-      $(`#${type}Select`).hover((event) => {
-        $(`#${type}Select`).addClass('goog-toolbar-menu-button-hover');
-      }, (event) => {
-        $(`#${type}Select`).removeClass('goog-toolbar-menu-button-hover'); 
-      });
-      $(`#${type}Select`).click(() => {
-        $(`#${type}Select`).toggleClass('goog-toolbar-menu-button-open');
-        $(`.${type}-menu`).css("left", $(`#${type}Select`).position().left + 55).toggle();
-      });
-    });
-    ['pull', 'push'].forEach((type) => {
-      $(`#${type}Button`).hover(() => {
-        $(`#${type}Button`).addClass('goog-toolbar-button-hover');
-      }, () => {
-        $(`#${type}Button`).removeClass('goog-toolbar-button-hover'); 
-      });
-    });
-    chrome.runtime.sendMessage({ cmd: "tab" });
-  });
-}
-
-function initLoginContent() {
-  $.get(chrome.runtime.getURL('content/login.html'))
-  .then((content) => {
-    $('#functionSelect').after(content);
-    $('#login').hover(() => {
-      $('#login').addClass('goog-toolbar-menu-button-hover');
-    }, () => {
-      $('#login').removeClass('goog-toolbar-menu-button-hover'); 
-    });
-    $('#login').click(() => {
-      if (chrome.runtime.openOptionsPage) {
-        chrome.runtime.openOptionsPage();
-      } else {
-        window.open(chrome.runtime.getURL('options/options.html'));
-      }  
-    });
-    chrome.runtime.sendMessage({ cmd: "tab" });
-  });
-}
-
 function updateRepo(repos) {
-  $('.repo-menu').empty().append('<div class="goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
+  $('.repo-menu').empty().append('<div class="github-new-repo github-item goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
   repos.forEach((repo) => {
     let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="repo" data="${repo.fullName}">${repo.name}</div></div>`
     $('.repo-menu').append(content);
@@ -694,7 +696,7 @@ function updateBranch() {
     { access_token: accessToken }
   )
   .done((branches) => {
-    $('.branch-menu').empty().append('<div class="goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
+    $('.branch-menu').empty().append('<div class="github-new-branch github-item goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
     branches.forEach((branch) => {
       let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="branch" data="${branch.name}">${branch.name}</div></div>`
       $('.branch-menu').append(content);
@@ -715,6 +717,61 @@ function updateBranch() {
   });
 }
 
+function gasCreateFile(file, type) {
+  const typeId = type === 'gs' ? 0 : 2;
+  const payload = `7|1|7|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|makeNewFile|18|g|${file}|1|2|3|4|2|5|6|7|6|${typeId}|`;
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: context.gasUrl,
+      headers: context.gasHeaders,
+      method: 'POST',
+      crossDomain: true,
+      data: payload,
+      dataType: 'text'
+    })
+    .done((response) => {
+      if (!response.startsWith('//OK')) reject(new Error(`Create file '${file}.${type}' failed`));
+      const responseData = eval(response.slice(4)).filter((e) => {
+        return typeof(e) === 'object';
+      })[0];
+      for (let i = 0; i < responseData.length; i++) {
+        if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(responseData[i])) {
+          context.fileIds[type] = responseData[i];
+          resolve();
+        }
+      }
+      reject(new Error('can not parse response'));
+    })
+    .fail((err) => {
+      reject(new Error('Create file failed'));
+    });
+  });
+}
+
+function gasUpdateFile(file, code) {
+  const escapedCode = code.replace(/\\/g, "\\\\").replace(/\|/g, '\\!');
+  const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|updateFile|18|${file}||${escapedCode}|1|2|3|4|3|5|5|5|6|7|8|`;
+  let headers = context.gasHeaders;
+  Object.assign(headers, { 'file-id': context.fileIds[file]});
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: context.gasUrl,
+      headers: headers,
+      method: 'POST',
+      crossDomain: true,
+      data: payload,
+      dataType: 'text'
+    })
+    .done((response) => {
+      if (!response.startsWith('//OK')) reject(new Error('Update file failed'));
+      resolve();
+    })
+    .fail((err) => {
+      reject(new Error('Update file failed'));
+    });
+  });
+}
+
 function changeModalState(type, toShow) {
   if (toShow) {
     const width = $('body').width();
@@ -725,23 +782,28 @@ function changeModalState(type, toShow) {
   } else {
     $(`#${type}Modal`).hide();
     $('.github-modal-bg').remove();
+    $(`#new-${type}-name`).css('border-color', '');
   }
 }
 
 function changeButtonState(type, value) {
   if (!value || value === "") {
-    $(`#github-create-${type}`).prop("disabled", true).addClass('awsui-button-disabled');
+    $(`#github-create-${type}`).prop("disabled", true);
+    $(`#new-${type}-name`).css('border-color', '#e0331e');
   } else {
-    $(`#github-create-${type}`).prop("disabled", false).removeClass('awsui-button-disabled');
+    $(`#github-create-${type}`).prop("disabled", false);
+    $(`#new-${type}-name`).css('border-color', '');
   }
 }
 
-//show alert using aws ui
-//level: info, warning, error
+/* show alert using gas ui
+ * level: info, warning, error
+ * but the class is promo. info, warning
+ */
 function showAlert(message, level=LEVEL_INFO) {
   $.get(chrome.runtime.getURL('content/alert.html'))
   .then((content) => {
-    $('.content').before(content.replace(/_INFO_/g, level).replace(/_MESSAGE_/, message));
+    $('#docs-butterbar-container').empty().append(content.replace(/_LEVEL_/g, level).replace(/_MESSAGE_/, message));
   });
 }
 

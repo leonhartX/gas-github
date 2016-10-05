@@ -4,12 +4,81 @@
     <span class="github-diff-modal-close modal-dialog-title-close"></span>
   </div>
   <div class="modal-dialog-content">
-    <div class="goog-inline-block script-logging-dialog">
-      <div class="github-diff" style="overflow-y: auto; max-height:500px">
+    <div class="goog-inline-block" style="width: 600px;">
+      <div class="github-diff" style="overflow-y: auto; max-height:500px;">
+      </div>
+      <div class="github-comment" style="border-top-width: 1px; border-top-style: solid; border-top-color: #ccc; padding-top: 12px; margin-top: 12px;">
+        <span class="gwt-InlineLabel">Commit comment: </span>
+        <input id="commit-comment" type="text" class="gwt-TextBox gwt-TextBox-readonly" style="width: 70%;">
       </div>
     </div>
   </div>
   <div class="github-modal-button modal-dialog-buttons">
-    <button name="ok" class="goog-buttonset-default">OK</button>
+    <button id="github-diff-handler" type="button" class="goog-buttonset-default goog-buttonset-action"></button>
+    <button type="button" class="github-diff-modal-close">Cancel</button>
+  </div>
+</div>
+
+<div id="repoModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+  <div class="modal-dialog-title modal-dialog-title-draggable">
+    <span class="modal-dialog-title-text">Create Github Repository</span>
+    <span class="github-repo-modal-close modal-dialog-title-close"></span>
+  </div>
+  <div class="modal-dialog-content">
+    <div class="goog-inline-block" style="width: 600px; height: 120px;">
+      <div class="github-repo">
+        <table class="properties-data-dialog-table">
+          <tbody>
+            <tr class="properties-data-dialog-table-header">
+              <th>Properties</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td><div>Repository Name</div></td>
+              <td><input id="new-repo-name" class="editable-row-input large-input" type="text"></td>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td><div>Description</div></td>
+              <td><input id="new-repo-desc" class="editable-row-input large-input" type="text"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="github-modal-button modal-dialog-buttons">
+    <button id="github-create-repo" type="button" class="goog-buttonset-default goog-buttonset-action" disabled="true">Create</button>
+    <button type="button" class="github-repo-modal-close">Cancel</button>
+  </div>
+</div>
+
+<div id="branchModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+  <div class="modal-dialog-title modal-dialog-title-draggable">
+    <span class="modal-dialog-title-text">Create Github Branch</span>
+    <span class="github-branch-modal-close modal-dialog-title-close"></span>
+  </div>
+  <div class="modal-dialog-content">
+    <div class="goog-inline-block" style="width: 600px; height: 90px;">
+      <div class="github-branch">
+        <table class="properties-data-dialog-table">
+          <tbody>
+            <tr class="properties-data-dialog-table-header">
+              <th>Properties</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td><div>Branch Name</div></td>
+              <td><input id="new-branch-name" class="editable-row-input large-input" type="text"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="github-modal-button modal-dialog-buttons">
+    <button id="github-create-branch" type="button" class="goog-buttonset-default goog-buttonset-action" disabled="true">Create</button>
+    <button type="button" class="github-branch-modal-close">Cancel</button>
   </div>
 </div>
