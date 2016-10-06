@@ -87,8 +87,7 @@
 
 .d2h-file-diff {
   overflow-x: scroll;
-  overflow-y: auto;
-  max-height: 400px;
+  overflow-y: hidden;
 }
 
 .d2h-file-side-diff {
@@ -172,7 +171,9 @@
 .d2h-code-linenumber {
   box-sizing: border-box;
   /*position: absolute;*/
+  width: 86px;
   min-width: 86px;
+  max-width: 86px;
   padding-left: 2px;
   padding-right: 2px;
   background-color: #fff;
@@ -186,7 +187,9 @@
 .d2h-code-side-linenumber {
   box-sizing: border-box;
   /*position: absolute;*/
+  width: 56px;
   min-width: 56px;
+  max-width: 56px;
   padding-left: 5px;
   padding-right: 5px;
   background-color: #fff;

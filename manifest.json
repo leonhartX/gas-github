@@ -49,6 +49,7 @@
   "web_accessible_resources": [
     "gas-hub.js",
     "options/options.html",
+    "content/alert.html",
     "content/button.html",
     "content/modal.html",
     "content/menu.html",
@@ -59,6 +60,8 @@
     "storage",
     "declarativeContent",
     "identity",
-    "tabs"
+    "tabs",
+    "webRequest",
+    "webRequestBlocking"
   ]
 }
