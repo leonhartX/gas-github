@@ -4,6 +4,10 @@ let baseUrl, accessToken, user;
 const LEVEL_ERROR = "warning";
 const LEVEL_WARN = "info";
 const LEVEL_INFO = "promo";
+const observer = new MutationObserver(() => {
+  $('.github-alert').remove();
+  observer.disconnect();
+});
 
 $(() => {
   initContext()
@@ -20,34 +24,11 @@ $(() => {
       case "nothing" :
         break;
       default:
-        console.log(err);
         showAlert("Unknow Error", LEVEL_ERROR);
         break;
     }
   });
 });
-
-function setObserver() {
-  return new Promise((resolve, reject) => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        const target = $(mutation.target);
-        if (target.hasClass('item selected')) {
-          context.file = target.text();
-          console.log(context.file);
-        }
-      });
-    });
-    const config = { attributes: true, attributeFilter:['class'], subtree: true, attributeOldValue: true };
-    const checkMenu = setInterval(() => {
-      if ($('.project-items-list').length > 0) {
-        observer.observe($('.project-items-list')[0], config);
-        clearInterval(checkMenu);
-        resolve();
-      }
-    }, 1000);
-  });
-}
 
 function initContext() {
   context = {};
@@ -137,10 +118,6 @@ function initPageEvent() {
       target = target.parent('.github-item');
     }
     target.removeClass('goog-menuitem-highlight');
-  });
-
-  $(document).on('click', `#test`, (event) => {
-    console.log('test');
   });
 
   ['repo', 'branch'].forEach((type) => {
@@ -237,6 +214,11 @@ function initPageEvent() {
  * this is very volatile since it is juse inferred from code
  */
 function initProjectContext() {
+  const files = $('.item').toArray().map((e) => {
+    const match = e.innerText.match(/(.*?)\.(gs|html)$/);
+    if (!match || !match[1] || !match[2]) return;
+    return match[1];
+  });
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['requestUrl' ,'requestHeaders', 'requestBody', 'gasToken'], resolve);
   })
@@ -262,32 +244,32 @@ function initProjectContext() {
     let found = false;
     let projectId;
     let fileIds = {};
+    let fileStack = [];
     for (let i = 0; i < initData.length; i++) {
+      if (files.indexOf(initData[i]) >= 0) fileStack.push(initData[i]);
       if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(initData[i])) { //get file id;
         if (!found) { //the first file
           found = true;
           projectId = initData[i + 1]; //id is the next one of the first file id
-          fileIds[initData[i - 2]] = initData[i];
-        } else {
-          fileIds[initData[i - 1]] = initData[i];
         }
+        fileIds[fileStack.pop()] = initData[i];
       }
-    }
+    };
     context.projectId = projectId;
     context.fileIds = fileIds;
-    console.log(context);
+    return files;
   });
 }
 
 function prepareCode() {
   const files = $('.item').toArray().map((e) => {
-    const fileInfo = e.innerText.split('.');
+    const match = e.innerText.match(/(.*?)\.(gs|html)$/);
+    if (!match || !match[1] || !match[2]) return;
     return { 
-      name: fileInfo[0], 
-      type: fileInfo[1] 
+      name: match[1], 
+      type: match[2]
     };
   });
-
   const gasPromises = files.map((file) => {
     return new Promise((resolve, reject) => {
       const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|getFileContent|j|${context.fileIds[file.name]}|${context.projectId}|k|1|2|3|4|1|5|5|6|7|8|0|0|`;
@@ -300,7 +282,7 @@ function prepareCode() {
         dataType: 'text'
       })
       .then((response) => {
-        if (!response.startsWith('//OK')) throw new Error('Init failed');
+        if (!response.startsWith('//OK'))  reject(new Error('get apps script code failed'));
         //evil eval, but it's simple to get the object since it's not valid json object
         const codeContent = eval(response.slice(4)).filter((e) => {
           return typeof(e) === 'object';
@@ -348,13 +330,6 @@ function prepareCode() {
       }, {})
     }
     return code;
-  })
-  .catch((err) => {
-    if (!context.repo || !context.branch) {
-      showAlert("Have not bind Github repository or branch.", LEVEL_WARN);
-    } else {
-      showAlert("Unknow error.", LEVEL_ERROR);
-    }
   })
 }
 
@@ -462,12 +437,13 @@ function githubPull(code) {
 }
 
 function githubPush(code) {
-  const payload = {
-    content: data.lambda,
-    encoding: "utf-8"
-  };
-  Promise.all([
-     $.ajax({
+  const promises = $('.diff-file:checked').toArray().map((elem) => {
+    const file = elem.value;
+    const payload = {
+      content: code.gas[file],
+      encoding: "utf-8"
+    };
+    return $.ajax({
       url: `${baseUrl}/repos/${context.repo.fullName}/git/blobs`,
       headers: {
         "Authorization": `token ${accessToken}`
@@ -477,21 +453,31 @@ function githubPush(code) {
       dataType: 'json',
       contentType: 'application/json',
       data: JSON.stringify(payload)
-    }),
+    })
+    .then((response) => {
+      return {file: file, blob: response};
+    })
+  });
+
+  Promise.all([
+    Promise.all(promises),
     $.getJSON(
       `${baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
       { access_token: accessToken }
     )
   ])
   .then((responses) => {
-    const payload = {
-      base_tree: responses[1].commit.commit.tree.sha,
-      tree : [{
-        path: context.file,
+    const tree = responses[0].map((data) => {
+      return {
+        path: data.file,
         mode: "100644",
         type: "blob",
-        sha: responses[0].sha
-      }]
+        sha: data.blob.sha
+      }
+    });
+    const payload = {
+      base_tree: responses[1].commit.commit.tree.sha,
+      tree: tree
     };
     return $.ajax({
       url: `${baseUrl}/repos/${context.repo.fullName}/git/trees`,
@@ -739,7 +725,7 @@ function gasCreateFile(file, type) {
       })[0];
       for (let i = 0; i < responseData.length; i++) {
         if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(responseData[i])) {
-          context.fileIds[type] = responseData[i];
+          context.fileIds[file] = responseData[i];
           resolve();
         }
       }
@@ -807,6 +793,7 @@ function showAlert(message, level=LEVEL_INFO) {
   $.get(chrome.runtime.getURL('content/alert.html'))
   .then((content) => {
     $('#docs-butterbar-container').empty().append(content.replace(/_LEVEL_/g, level).replace(/_MESSAGE_/, message));
+    observer.observe(document.getElementById('docs-butterbar-container'), { childList: true });
   });
 }
 
