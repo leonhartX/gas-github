@@ -184,7 +184,7 @@ function initPageEvent() {
       initProjectContext()
       .then(prepareCode)
       .then((data) => { showDiff.call(window[`github${type.capitalize()}`], data, type) }) //get more performance over callback
-      .catch((err) => { showAlert('Unknow Error') });
+      .catch((err) => { showAlert(err.message, LEVEL_ERROR) });
     });
   });
 
@@ -388,7 +388,6 @@ function showDiff(code, type) {
     fileDiff = diffArr.join('\n');   
     return diff + fileDiff;
   }, "");
-  console.log(diff);
 
   if (diff === "") {
     showAlert("Everything already up-to-date", LEVEL_WARN);
@@ -398,6 +397,10 @@ function showDiff(code, type) {
   const diffHtml = new Diff2HtmlUI({diff : diff});
   diffHtml.draw('.github-diff', {inputFormat: 'json', showFiles: false});
   diffHtml.highlightCode('.github-diff');
+  $('.d2h-file-name-wrapper').each((i, e) => {
+    const filename = $(e).children('.d2h-file-name').text();
+    $(e).prepend(`<span><input type="checkbox" class="diff-file" checked="true" value="${filename}" style="margin-right: 10px;"></span>`);
+  });
   $('#commit-comment').off().val("");
   $('#github-diff-handler').prop("disabled", false);
   if (oldCode === newCode) {
@@ -426,8 +429,8 @@ function showDiff(code, type) {
 }
 
 function githubPull(code) {
-  console.log(code);
-  const promises = Object.keys(code.github).map((file) => {
+  const promises = $('.diff-file:checked').toArray().map((elem) => {
+    const file = elem.value;
     const match = file.match(/(.*?)\.(gs|html)$/);
     if (!match || !match[1] || !match[2]) {
       showAlert('Unknow Error', LEVEL_ERROR);
