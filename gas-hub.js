@@ -241,90 +241,87 @@ function initProjectContext() {
     const initData = eval(response.slice(4)).filter((e) => {
       return typeof(e) === 'object';
     })[0];
-    let found = false;
-    let projectId;
-    let fileIds = {};
-    let fileStack = [];
-    for (let i = 0; i < initData.length; i++) {
-      if (files.indexOf(initData[i]) >= 0) fileStack.push(initData[i]);
-      if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(initData[i])) { //get file id;
-        if (!found) { //the first file
-          found = true;
-          projectId = initData[i + 1]; //id is the next one of the first file id
-        }
-        fileIds[fileStack.pop()] = initData[i];
-      }
-    };
-    context.projectId = projectId;
-    context.fileIds = fileIds;
-    return files;
+    const ids = initData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
+    context.projectId = initData[initData.indexOf(ids[0]) + 1];
+    if (!/\w{33}/.test(context.projectId)) {
+      reject(new Error('cant not get project ID'));
+    }
+    const promises = ids.map((id) => {
+      return new Promise((resolve, reject) => {
+        const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|getFileContent|j|${id}|${context.projectId}|k|1|2|3|4|1|5|5|6|7|8|0|0|`;
+        $.ajax({
+          url: context.gasUrl,
+          headers: context.gasHeaders,
+          method: 'POST',
+          crossDomain: true,
+          data: payload,
+          dataType: 'text'
+        })
+        .then((response) => {
+          if (!response.startsWith('//OK'))  reject(new Error('get apps script code failed'));
+          //evil eval, but it's simple to get the object since it's not valid json object
+          const codeContent = eval(response.slice(4)).filter((e) => {
+            return typeof(e) === 'object';
+          })[0];
+          resolve({file : codeContent[codeContent.length - 6], content: codeContent[codeContent.length - 10], id : id });
+        })
+        .fail(reject);
+      })
+    });
+    return Promise.all(promises);
+  })
+  .then((responses) => {
+    context.fileIds = responses.reduce((hash, elem) => {
+      if (elem) hash[elem.file] = elem.id;
+      return hash;
+    }, {});
+    return responses;
   });
 }
 
-function prepareCode() {
-  const files = $('.item').toArray().map((e) => {
-    const match = e.innerText.match(/(.*?)\.(gs|html)$/);
-    if (!match || !match[1] || !match[2]) return;
-    return { 
-      name: match[1], 
-      type: match[2]
-    };
-  });
-  const gasPromises = files.map((file) => {
-    return new Promise((resolve, reject) => {
-      const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|getFileContent|j|${context.fileIds[file.name]}|${context.projectId}|k|1|2|3|4|1|5|5|6|7|8|0|0|`;
-      $.ajax({
-        url: context.gasUrl,
-        headers: context.gasHeaders,
-        method: 'POST',
-        crossDomain: true,
-        data: payload,
-        dataType: 'text'
-      })
-      .then((response) => {
-        if (!response.startsWith('//OK'))  reject(new Error('get apps script code failed'));
-        //evil eval, but it's simple to get the object since it's not valid json object
-        const codeContent = eval(response.slice(4)).filter((e) => {
-          return typeof(e) === 'object';
-        })[0];
-        resolve({file : `${file.name}.${file.type}`, content: codeContent[codeContent.length - 10]});
-      });
-    })
-  });
-
-  return Promise.all([
-    Promise.all(gasPromises),
+function prepareCode(gasFiles) {
+  return new Promise((resolve, reject) => {
     $.getJSON(
       `${baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
       { access_token: accessToken }
     )
-    .then((response) => {
-      return $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
-        { recursive: 1, access_token: accessToken }
-      );
+    .then(resolve)
+    .fail(reject);
+  })
+  .then((response) => {
+    return $.getJSON(
+      `${baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
+      { recursive: 1, access_token: accessToken }
+    );
+  })
+  .then((response) => {
+    const promises = response.tree.filter((tree) => {
+      return tree.type === 'blob' && /(\.gs|\.html)$/.test(tree.path);
     })
-    .then((response) => {
-      return Promise.all(
-        response.tree.filter((tree) => {
-          return tree.type === 'blob' && /(\.gs|\.html)$/.test(tree.path);
+    .map((tree) => {
+      return new Promise((resolve, reject) => {
+        $.getJSON(tree.url, {access_token: accessToken })
+        .then((content) => {
+          resolve({ file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
         })
-        .map((tree) => {
-          return $.getJSON(tree.url, {access_token: accessToken })
-          .then((content) => {
-            return { file: tree.path, content: decodeURIComponent(escape(atob(content.content)))};
-          });
-        })
-      );
-    })
-  ])
+        .fail(reject)
+      });
+    });
+    return Promise.all(promises);
+  })
   .then((data) => {
+    const files = $('.item').toArray().reduce((hash, e) => {
+      const match = e.innerText.match(/(.*?)\.(gs|html)$/);
+      if (!match || !match[1] || !match[2]) return hash;
+      hash[match[1]] = match[0];
+      return hash;
+    }, {});
     const code = {
-      gas: data[0].reduce((hash, elem) => {
-        if (elem) hash[elem.file] = elem.content;
+      gas: gasFiles.reduce((hash, elem) => {
+        if (elem) hash[files[elem.file]] = elem.content;
         return hash;
       }, {}),
-      github: data[1].reduce((hash, elem) => {
+      github: data.reduce((hash, elem) => {
         if (elem) hash[elem.file] = elem.content;
         return hash;
       }, {})
@@ -718,18 +715,18 @@ function gasCreateFile(file, type) {
       data: payload,
       dataType: 'text'
     })
-    .done((response) => {
+    .then((response) => {
       if (!response.startsWith('//OK')) reject(new Error(`Create file '${file}.${type}' failed`));
       const responseData = eval(response.slice(4)).filter((e) => {
         return typeof(e) === 'object';
       })[0];
-      for (let i = 0; i < responseData.length; i++) {
-        if (/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(responseData[i])) {
-          context.fileIds[file] = responseData[i];
-          resolve();
-        }
+      const id = responseData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
+      if (id.length > 0) {
+        context.fileIds[file] = id[0];
+        resolve();
+      } else {
+        reject(new Error('can not parse response'));
       }
-      reject(new Error('can not parse response'));
     })
     .fail((err) => {
       reject(new Error('Create file failed'));
