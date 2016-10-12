@@ -243,7 +243,7 @@ function initProjectContext() {
     })[0];
     const ids = initData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
     context.projectId = initData[initData.indexOf(ids[0]) + 1];
-    if (!/\w{33}/.test(context.projectId)) {
+    if (context.projectId.length != 33) {
       reject(new Error('cant not get project ID'));
     }
     const promises = ids.map((id) => {
