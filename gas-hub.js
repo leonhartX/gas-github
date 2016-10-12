@@ -4,9 +4,9 @@ let baseUrl, accessToken, user;
 const LEVEL_ERROR = "warning";
 const LEVEL_WARN = "info";
 const LEVEL_INFO = "promo";
-const observer = new MutationObserver(() => {
-  $('.github-alert').remove();
+const observer = new MutationObserver((e) => {
   observer.disconnect();
+  $('.github-alert').remove();  
 });
 
 $(() => {
@@ -420,6 +420,11 @@ function githubPull(code) {
       return gasUpdateFile(name, code.github[file]);
     }
   });
+  if (promises.length === 0) {
+    showAlert("Nothing to do", LEVEL_WARN);
+    return;
+  }
+
   initProjectContext()
   .then(() => {
     return Promise.all(promises);
@@ -455,6 +460,10 @@ function githubPush(code) {
       return {file: file, blob: response};
     })
   });
+  if (promises.length === 0) {
+    showAlert("Nothing to do", LEVEL_WARN);
+    return;
+  }
 
   Promise.all([
     Promise.all(promises),
@@ -789,9 +798,10 @@ function changeButtonState(type, value) {
 function showAlert(message, level=LEVEL_INFO) {
   $.get(chrome.runtime.getURL('content/alert.html'))
   .then((content) => {
+    observer.disconnect();
     $('#docs-butterbar-container').empty().append(content.replace(/_LEVEL_/g, level).replace(/_MESSAGE_/, message));
     observer.observe(document.getElementById('docs-butterbar-container'), { childList: true });
-  });
+  })
 }
 
 String.prototype.capitalize = function() {
