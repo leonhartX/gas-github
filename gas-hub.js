@@ -545,17 +545,32 @@ function githubPush(code) {
   });
 }
 
-function getGithubRepos() {
-  return $.ajax({
-    url: `${baseUrl}/user/repos`,
-    headers: {
-      "Authorization": `token ${accessToken}`
-    },
-    method: 'GET',
-    crossDomain: true,
-    dataType: 'json',
-    contentType: 'application/json'
+function followPaginate(data) {
+  return new Promise((resolve, reject) => {
+    $.getJSON(data.url)
+    .then((response, status, xhr) => {
+      data.items = data.items.concat(response);
+      const link = xhr.getResponseHeader('Link');
+      let url = null;
+      if (link) {
+        const match = link.match(/<(.*?)>; rel="next"/);
+        url = match && match[1] ? match[1] : null;
+      }
+      resolve({ items: data.items, url: url });
+    })
+    .fail(reject);
+  });
+}
+
+function getAllItems(promise) {
+  return promise.then(followPaginate)
+  .then((data) => {
+    return data.url ? getAllItems(Promise.resolve(data), followPaginate) : data.items;
   })
+}
+
+function getGithubRepos() {
+  return getAllItems(Promise.resolve({items: [], url: `${baseUrl}/user/repos?access_token=${accessToken}`}))
   .then((response) => {
     const repos = response.map((repo) => {
       return { name : repo.name, fullName : repo.full_name }
@@ -578,16 +593,20 @@ function githubCreateRepo() {
     auto_init : true
   }
   if (!repo || repo === "") return;
-  $.ajax({
-    url: `${baseUrl}/user/repos`,
-    headers: {
-      "Authorization": `token ${accessToken}`
-    },
-    method: 'POST',
-    crossDomain: true,
-    dataType: 'json',
-    contentType: 'application/json',
-    data: JSON.stringify(payload)
+  new Promise((resolve, reject) => {
+    $.ajax({
+      url: `${baseUrl}/user/repos`,
+      headers: {
+        "Authorization": `token ${accessToken}`
+      },
+      method: 'POST',
+      crossDomain: true,
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(payload)
+    })
+    .then(resolve)
+    .fail(reject);
   })
   .then((response) => {
     const repo = {
@@ -610,7 +629,7 @@ function githubCreateRepo() {
     $('#new-repo-desc').val("");
     showAlert(`Successfully create new repository ${repo}`);
   })
-  .fail((err) => {
+  .catch((err) => {
     showAlert("Failed to create new repository.", LEVEL_ERROR);
   });
 }
@@ -618,10 +637,14 @@ function githubCreateRepo() {
 function githubCreateBranch() {
   const branch = $('#new-branch-name').val();
   if (!branch || branch === "") return;
-  $.getJSON(
-    `${baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
-    { access_token: accessToken }
-  )
+  new Promise((resolve, reject) => {
+    $.getJSON(
+      `${baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
+      { access_token: accessToken }
+    )
+    .then(resolve)
+    .fail(reject)  
+  })
   .then((response) => {
     if (response.object) {
       return response.object.sha;
@@ -664,7 +687,7 @@ function githubCreateBranch() {
     $('#new-branch-name').val("");
     showAlert(`Successfully create new branch: ${branch}`);
   })
-  .fail((err) => {
+  .catch((err) => {
     showAlert("Failed to create new branch.", LEVEL_ERROR);
   });
 }
@@ -686,11 +709,8 @@ function updateBranch() {
   if (!context.repo) {
     return null;
   }
-  return $.getJSON(
-    `${baseUrl}/repos/${context.repo.fullName}/branches`,
-    { access_token: accessToken }
-  )
-  .done((branches) => {
+  getAllItems(Promise.resolve({items: [], url: `${baseUrl}/repos/${context.repo.fullName}/branches?access_token=${accessToken}`}))
+  .then((branches) => {
     $('.branch-menu').empty().append('<div class="github-new-branch github-item goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
     branches.forEach((branch) => {
       let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="branch" data="${branch.name}">${branch.name}</div></div>`
@@ -724,22 +744,21 @@ function gasCreateFile(file, type) {
       data: payload,
       dataType: 'text'
     })
-    .then((response) => {
-      if (!response.startsWith('//OK')) reject(new Error(`Create file '${file}.${type}' failed`));
-      const responseData = eval(response.slice(4)).filter((e) => {
-        return typeof(e) === 'object';
-      })[0];
-      const id = responseData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
-      if (id.length > 0) {
-        context.fileIds[file] = id[0];
-        resolve();
-      } else {
-        reject(new Error('can not parse response'));
-      }
-    })
-    .fail((err) => {
-      reject(new Error('Create file failed'));
-    });
+    .then(resolve)
+    .fail((err) => {reject(new Error('Create file failed'))})
+  })
+  .then((response) => {
+    if (!response.startsWith('//OK')) reject(new Error(`Create file '${file}.${type}' failed`));
+    const responseData = eval(response.slice(4)).filter((e) => {
+      return typeof(e) === 'object';
+    })[0];
+    const id = responseData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
+    if (id.length > 0) {
+      context.fileIds[file] = id[0];
+      return id[0];
+    } else {
+      throw new Error('can not parse response');
+    }
   });
 }
 
@@ -757,7 +776,7 @@ function gasUpdateFile(file, code) {
       data: payload,
       dataType: 'text'
     })
-    .done((response) => {
+    .then((response) => {
       if (!response.startsWith('//OK')) reject(new Error('Update file failed'));
       resolve();
     })
