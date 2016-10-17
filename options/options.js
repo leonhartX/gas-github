@@ -77,7 +77,7 @@ function loginGithub(param) {
   }
   const payload = {
     scopes: [
-      "public_repo"
+      "repo"
     ],
     note: "gas-github_" + Date.now()
   }
