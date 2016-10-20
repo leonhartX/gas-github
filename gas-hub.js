@@ -46,7 +46,6 @@ function initContext() {
       baseUrl = item.baseUrl;
       context.bindRepo = item.bindRepo || {};
       context.bindBranch = item.bindBranch || {};
-      context.bindFile = item.bindFile || {};
       resolve();
     });
   })
@@ -709,7 +708,7 @@ function updateBranch() {
   if (!context.repo) {
     return null;
   }
-  getAllItems(Promise.resolve({items: [], url: `${baseUrl}/repos/${context.repo.fullName}/branches?access_token=${accessToken}`}))
+  return getAllItems(Promise.resolve({items: [], url: `${baseUrl}/repos/${context.repo.fullName}/branches?access_token=${accessToken}`}))
   .then((branches) => {
     $('.branch-menu').empty().append('<div class="github-new-branch github-item goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
     branches.forEach((branch) => {
