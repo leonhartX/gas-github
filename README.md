@@ -1,17 +1,16 @@
 # gas-github
-Chrome-extension for manage Google Apps Script(GAS) code with github/github enterprise.
+Chrome-extension to manage Google Apps Script(GAS) code with github/github enterprise.
 
-With this extension, you can manage your code on GAS IDE, push code to a new created branch, pull from some repository/branch.
+With this extension, you can manage your code in GAS editor, push code to a new created branch, pull from a repository/branch.
 
-The extension does not use Google Drive API, so you don't need any google authentication.And also, this extension support **Embedded Script** which belongs to some Spreadsheet or Doc.
-
+The extension does not use Google Drive API, so you don't need any google authentication. Moreover, this extension support **Bound scripts**.
 
 
 #1.Install
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
 
 #2.Usage
-After install, when you open GAS IDE, a new button will appear to ask you login in to Github/Github Enterprise.
+After install, when you open GAS editor, a new button will appear to allow you to login to Github/Github Enterprise.
 
 ##2.1.Login
 Login to your Github/Github Enterprise account, with Two-factor authentication support.
@@ -28,10 +27,10 @@ Manage your code with the similar `Push` and `Pull`.But there are something need
 ###2.3.1.Create Repository/Branch
 In `Repo` and `Branch` dropdown list, there is an option to Create new Repo and Branch.
 
-New Repo will created with init, mean's a default README.md.
+New Repo will be created with init, mean's a default README.md.
 
 ###2.3.2.Pull and Push
-The **PULL/PUSH** is not actually same as Github's **PULL/PUSH**, because GAS project does not have any git info, so what can do is limited.
+The **PULL/PUSH** is not actually the same as Github's **PULL/PUSH**, because GAS project does not have any git info, so what we can do is limited.
 
 The differences are:
 
@@ -40,13 +39,13 @@ The differences are:
 - `Push` will commit file changed, file added to Github, but not file deleted.
 
 Other points:
-- A diff dialog will shown before you confirm to `Push` or `Pull`.
+- A diff dialog will be shown before you confirm to `Push` or `Pull`.
 - You can choose files to operate with in the diff dialog.
-- `Push` must have a commit comment which will be asked at the diff dialog.
+- `Push` must have a commit comment which will be added from the diff dialog.
 
 ##2.4.Logout
-You can logout from the extension's option page any time. After logout, the  access token stored in extension will be deleted, 
-but you will need to delete the token it self from Github/Github Enterprise's settins page.
+You can logout from the extension's option page any time. After logout, the access token stored in extension will be deleted, 
+but you will need to delete the token yourself from Github/Github Enterprise's settins page.
 
 #3.Features
 
