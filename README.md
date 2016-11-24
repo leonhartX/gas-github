@@ -68,3 +68,5 @@ but you will need to delete the token yourself from Github/Github Enterprise's s
 
 #4.Support
 please create an issue for any question or bug report.
+
+PS: There is a similar [extension](https://github.com/leonhartX/lambda-github) for sync your AWS lambda code.
