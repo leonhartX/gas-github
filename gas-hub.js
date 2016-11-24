@@ -21,6 +21,8 @@ $(() => {
       case "need login" :
         initLoginContent();
         break;
+      case "not match" :
+        break;
       case "nothing" :
         break;
       default:
@@ -33,7 +35,7 @@ $(() => {
 function initContext() {
   context = {};
   const match = window.location.href.match(/https:\/\/script\.google\.com.*?\/d\/([^/]*)\//);
-  if (!match) return null;
+  if (!match) return Promise.reject(new Error("not match"));
   context.id = match[1];
 
   return new Promise((resolve, reject) => {
