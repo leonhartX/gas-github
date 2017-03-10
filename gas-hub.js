@@ -34,9 +34,10 @@ $(() => {
 
 function initContext() {
   context = {};
-  const match = window.location.href.match(/https:\/\/script\.google\.com.*?\/d\/([^/]*)\//);
+  const match = window.location.href.match(/https:\/\/script\.google\.com(.*?)\/d\/([^/]*)\//);
   if (!match) return Promise.reject(new Error("not match"));
-  context.id = match[1];
+  context.isBound = match[1] === "/macros";
+  context.id = match[2];
 
   return new Promise((resolve, reject) => {
     chrome.storage.sync.get(["token","user", "baseUrl", "bindRepo", "bindBranch"], (item) => {
@@ -249,7 +250,7 @@ function initProjectContext() {
     }
     const promises = ids.map((id) => {
       return new Promise((resolve, reject) => {
-        const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|getFileContent|j|${id}|${context.projectId}|k|1|2|3|4|1|5|5|6|7|8|0|0|`;
+        const payload = `7|1|8|${getBaseUrl()}\|${context.gasToken}|_|getFileContent|k|${id}|${context.projectId}|l|1|2|3|4|1|5|5|6|7|8|0|0|`;
         $.ajax({
           url: context.gasUrl,
           headers: context.gasHeaders,
@@ -739,7 +740,7 @@ function updateBranch() {
 
 function gasCreateFile(file, type) {
   const typeId = type === 'gs' ? 0 : 2;
-  const payload = `7|1|7|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|makeNewFile|18|g|${file}|1|2|3|4|2|5|6|7|6|${typeId}|`;
+  const payload = `7|1|7|${getBaseUrl()}\|${context.gasToken}|_|makeNewFile|19|h|${file}|1|2|3|4|2|5|6|7|6|${typeId}|`;
   return new Promise((resolve, reject) => {
     $.ajax({
       url: context.gasUrl,
@@ -769,7 +770,7 @@ function gasCreateFile(file, type) {
 
 function gasUpdateFile(file, code) {
   const escapedCode = code.replace(/\\/g, "\\\\").replace(/\|/g, '\\!');
-  const payload = `7|1|8|https://script.google.com/macros/d/${context.projectId}/gwt/\|${context.gasToken}|_|updateFile|18|${file}||${escapedCode}|1|2|3|4|3|5|5|5|6|7|8|`;
+  const payload = `7|1|8|${getBaseUrl()}\|${context.gasToken}|_|updateFile|19|${file}||${escapedCode}|1|2|3|4|3|5|5|5|6|7|8|`;
   let headers = context.gasHeaders;
   Object.assign(headers, { 'file-id': context.fileIds[file]});
   return new Promise((resolve, reject) => {
@@ -789,6 +790,14 @@ function gasUpdateFile(file, code) {
       reject(new Error('Update file failed'));
     });
   });
+}
+
+function getBaseUrl() {
+  if(context.isBound) {
+    return `https://script.google.com/macros/d/${context.projectId}/gwt/`;
+  } else {
+    return `https://script.google.com/d/${context.id}/gwt/`
+  }
 }
 
 function changeModalState(type, toShow) {
