@@ -689,7 +689,11 @@ function githubCreateBranch() {
     showAlert(`Successfully create new branch: ${branch}`);
   })
   .catch((err) => {
-    showAlert("Failed to create new branch.", LEVEL_ERROR);
+    if (err.status === 409) {
+      showAlert("Cannot create branch in empty repository with API, try to create branch in Github.", LEVEL_ERROR);
+    } else {
+      showAlert("Failed to create new branch.", LEVEL_ERROR);
+    }
   });
 }
 
@@ -718,9 +722,9 @@ function updateBranch() {
       $('.branch-menu').append(content);
     });
     let branch = context.bindBranch[context.id];
-    if (!branch && branches.length === 0) {
+    if (branches.length === 0) {
       branch = "";
-      showAlert("This repository do not has any branch yet, try to create a new branch such as [master].", LEVEL_WARN);
+      showAlert("This repository is empty, try to create a new branch such as [master] in Github.", LEVEL_WARN);
     } else if ($.inArray(branch, branches.map(branch => branch.name)) < 0) {
       branch = ($.inArray("master", branches.map(branch => branch.name)) >= 0) ? "master" : branches[0].name;
     }
