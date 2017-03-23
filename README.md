@@ -71,6 +71,7 @@ please create an issue for any question or bug report.
 
 # 5.Known issues
 
- - `.gs` file which contains a function with the same name as the file will not work [#18](https://github.com/leonhartX/gas-github/issues/18)
+ - `.gs` file which contains a function with the same name as the file will not work [#18](https://github.com/leonhartX/gas-github/issues/18). (limited by GAS'S RPC)
+ - Can not push to a blank repo without a init commit. (limited by Github API)
  
 PS: There is a similar [extension](https://github.com/leonhartX/lambda-github) for sync your AWS lambda code.
