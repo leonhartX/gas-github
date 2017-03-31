@@ -35,7 +35,9 @@
         "lib/diff2html.min.js",
         "lib/diff2html-ui.min.js",
         "lib/highlight.min.js",
-        "gas-hub.js"
+        "src/gas-hub.js",
+        "src/gas-api.js",
+        "src/github-api.js"
       ],
       "css":[
         "lib/diff2html.css",
