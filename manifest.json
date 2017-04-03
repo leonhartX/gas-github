@@ -1,5 +1,5 @@
 {
-  "version": "0.1.9",
+  "version": "1.0.0",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -35,7 +35,9 @@
         "lib/diff2html.min.js",
         "lib/diff2html-ui.min.js",
         "lib/highlight.min.js",
-        "gas-hub.js"
+        "src/gas-hub.js",
+        "src/gas-api.js",
+        "src/github-api.js"
       ],
       "css":[
         "lib/diff2html.css",
