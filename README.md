@@ -48,6 +48,14 @@ Other points:
 - You can choose files to operate with in the diff dialog.
 - `Push` must have a commit comment which will be added from the diff dialog.
 
+#### 2.3.2.1 Gist
+For using Gist, select `Using Gist` in the `Repo` dropdown list, then `Branch` dropdown will changed to `Gist`. But since gist do not has a name, you need to select the id to specific which gist to sync(a tooltip will show description of the gist).
+
+- If there is no gist, you can create one from the extension.
+- The gist created from extension will be initialzated with a default `init_by_gas_hub.html` file, this will be delete when first time you push you code to gist. 
+- You can change the description when push.
+- Same as sync to repo, only file added and file changed is supported.
+
 ## 2.4.Logout
 You can logout from the extension's option page any time. After logout, the access token stored in extension will be deleted, 
 but you will need to delete the token yourself from Github/Github Enterprise's settins page.
@@ -55,6 +63,7 @@ but you will need to delete the token yourself from Github/Github Enterprise's s
 # 3.Features
 
  - Support Push/Pull code between github and GAS
+ - Support sync code to public/secret Gist
  - Support embedded script
  - Support create github repo, branch from GAS IDE
  - Support diff check when pull/push
