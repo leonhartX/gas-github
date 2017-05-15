@@ -5,10 +5,10 @@ $(() => {
    $('.login-container').animate({height: "toggle", opacity: "toggle"}, "slow");
   });
   $('#login').click((e) => {
-    loginGithub(getGithubParam());
+    addCred(getGithubParam());
   });
   $('#ghe-login').click((e) => {
-    loginGithub(getGHEParam());
+    addCred(getGHEParam());
   });
   $('#logout').click((e) => {
     logoutGithub();
@@ -44,11 +44,13 @@ $(() => {
 function getGithubParam() {
   const username = $('#username').val();
   const password = $('#password').val();
+  const token = $('#accesstoken').val();
   const baseUrl = `https://api.github.com`;
   const otp = $('#otp').val();
   return {
     username,
     password,
+    token,
     baseUrl,
     otp
   };
@@ -57,14 +59,35 @@ function getGithubParam() {
 function getGHEParam() {
   const username = $('#ghe-username').val();
   const password = $('#ghe-password').val();
+  const token = $('#ghe-accesstoken').val();
   const baseUrl = $('#ghe-url').val() + "/api/v3";
   const otp = $('#ghe-otp').val();
   return {
     username,
     password,
+    token,
     baseUrl,
     otp
   };
+}
+
+function addCred(param) {
+  if (param.username === "") {
+    return;
+  }
+  if (param.password === "" && param.token === "") {
+    return;
+  }
+
+  if (param.password !== "") return loginGithub(param);
+  chrome.storage.sync.set({ user: param.username, token: param.token, baseUrl: param.baseUrl}, () => {
+    location.reload();
+  });
+  chrome.storage.local.get("tab", (item) => {
+    if(item.tab) {
+      chrome.tabs.reload(item.tab);
+    }
+  });
 }
 
 function loginGithub(param) {
@@ -72,9 +95,6 @@ function loginGithub(param) {
   const password = param.password;
   const baseUrl = param.baseUrl;
   const otp = param.otp
-  if(username === "" || password === "") {
-    return;
-  }
   const payload = {
     scopes: [
       "repo",
@@ -97,7 +117,7 @@ function loginGithub(param) {
     data: JSON.stringify(payload)
   })
   .done((response) => {
-    chrome.storage.sync.set({ user: username, token: response.token, id: response.id, baseUrl: baseUrl}, () => {
+    chrome.storage.sync.set({ user: username, token: response.token, baseUrl: baseUrl}, () => {
       location.reload();
     });
     chrome.storage.local.get("tab", (item) => {
@@ -118,7 +138,7 @@ function loginGithub(param) {
 }
 
 function logoutGithub() {
-  chrome.storage.sync.remove(["token", "user", "id", "baseUrl"], () => {
+  chrome.storage.sync.remove(["token", "user", "baseUrl"], () => {
     location.reload();
   });
   chrome.storage.local.get("tab", (item) => {
@@ -130,7 +150,7 @@ function logoutGithub() {
 
 function checkToken() {
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["token", "user", "id", "baseUrl"], (item) => {
+    chrome.storage.sync.get(["token", "user", "baseUrl"], (item) => {
       if (item.token && item.token !== ""){
         resolve(item);
       }

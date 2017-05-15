@@ -48,6 +48,12 @@
   color: #b3b3b3;
   font-size: 12px;
 }
+.form .label {
+  margin: -5px 0 0;
+  color: #838383;
+  font-size: 12px;
+  text-align: left;
+}
 .form .message a,.form .warning a {
   color: #4CAF50;
   text-decoration: none;
