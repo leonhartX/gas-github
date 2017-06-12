@@ -16,6 +16,8 @@ function pull(code) {
       .then(() => {
         return gasUpdateFile(name, code.github[file]);
       })
+    } else if (!code.github[file]) {
+      return gasDeleteFile(name);
     } else {
       return gasUpdateFile(name, code.github[file]);
     }
@@ -161,6 +163,29 @@ function gasUpdateFile(file, code) {
     })
     .then((response) => {
       if (!response.startsWith('//OK')) reject(new Error('Update file failed'));
+      resolve();
+    })
+    .fail((err) => {
+      reject(new Error('Update file failed'));
+    });
+  });
+}
+
+function gasDeleteFile(file) {
+  const payload = `7|1|4|${getBaseUrl()}\|${context.gasToken}|_|deleteFile|1|2|3|4|0|`;
+  let headers = context.gasHeaders;
+  Object.assign(headers, { 'file-id': context.fileIds[file]});
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: context.gasUrl,
+      headers: headers,
+      method: 'POST',
+      crossDomain: true,
+      data: payload,
+      dataType: 'text'
+    })
+    .then((response) => {
+      if (!response.startsWith('//OK')) reject(new Error('Delete file failed'));
       resolve();
     })
     .fail((err) => {

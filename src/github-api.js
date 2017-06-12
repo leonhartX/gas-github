@@ -91,7 +91,7 @@ function pushToRepo(code) {
     });
   })
   .then((response) => {
-     const payload = {
+    const payload = {
       force: true,
       sha: response.sha
     };
