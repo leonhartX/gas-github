@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "2.0.0",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -10,12 +10,6 @@
     "16": "icon/icon.png",
     "48": "icon/icon.png",
     "128": "icon/icon.png"
-  },
-  "oauth2" : {
-    "client_id" : "971735641612-f7v88rtfkcogntklsh5hitv6k7pd8teh.apps.googleusercontent.com",
-    "scopes": [
-      "https://www.googleapis.com/auth/drive"
-    ]
   },
   "background": {
     "scripts": [
