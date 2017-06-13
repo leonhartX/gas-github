@@ -261,17 +261,18 @@ function showDiff(code, type) {
   const newCode = type === "push" ? code.gas : code.github;
   const gasFiles = Object.keys(code.gas);
   const githubFiles = Object.keys(code.github);
-  let diff = gasFiles.concat(githubFiles.filter((e) => {
+  let diff = githubFiles.filter((e) => {
     return gasFiles.indexOf(e) < 0;
-  }))
+  })
+  .concat(gasFiles)
   .reduce((diff, file) => {
     let mode = null;
     if (!oldCode[file]) {
       mode = 'new file mode 100644';
     } else if (!newCode[file]) {
-      return diff;
+      mode = 'deleted file mode 100644';
     }
-    let fileDiff = JsDiff.createPatch(file, oldCode[file] || "", newCode[file]);
+    let fileDiff = JsDiff.createPatch(file, oldCode[file] || "", newCode[file] || "");
     if (fileDiff.indexOf('@@') < 0) return diff; //no diff
     let diffArr = fileDiff.split('\n');
     diffArr.splice(0, 2, `diff --git a/${file} b/${file}`);
