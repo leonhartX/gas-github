@@ -40,8 +40,10 @@ The **PULL/PUSH** is not actually the same as Github's **PULL/PUSH**, because GA
 The differences are:
 
 - `Pull` will fetch code form the bind Repository/Branch, and **OVERWRITE** to current GAS Project. There is no merge operation.
-- `Pull` will create new file if needed(when the file only shows in Github), but will not deleted any file that has been deleted in Github. You can delete them by yourself.
+- `Pull` will create new file when the file only shows in Github.
+  - v2.0.0 has supported the file deletion when old files do not exist in Github.
 - `Push` will commit file changed, file added to Github, but not file deleted.
+  - v2.0.0 has supportd to delete files on Github. Directory will be deleted when all files under the dir has been deleted.
 
 Other points:
 - A diff dialog will be shown before you confirm to `Push` or `Pull`.
@@ -68,7 +70,7 @@ but you will need to delete the token yourself from Github/Github Enterprise's s
  - Support create github repo, branch from GAS IDE
  - Support diff check when pull/push
  - Support choose files to pull/push
- - Support file changed and file added(no file deleted)
+ - Support file changed/added/deleted/renamed
  - Support commit comment when push
  - Support Github and Github Enterprise
  - Support two-factor authentication
