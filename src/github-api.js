@@ -6,8 +6,9 @@ function push(code){
 }
 
 function pushToRepo(code) {
-  const promises = $('.diff-file:checked').toArray().map((elem) => {
-    const file = elem.value;
+  const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
+  const unchanged = Object.keys(code.gas).filter((f) => changed.indexOf(f) < 0 );
+  const promises = changed.filter(f => code.gas[f]).map((file) => {
     const payload = {
       content: code.gas[file],
       encoding: "utf-8"
@@ -27,7 +28,7 @@ function pushToRepo(code) {
       return {file: file, blob: response};
     })
   });
-  if (promises.length === 0) {
+  if (changed.lengthun === 0) {
     showAlert("Nothing to do", LEVEL_WARN);
     return;
   }
@@ -40,28 +41,41 @@ function pushToRepo(code) {
     )
   ])
   .then((responses) => {
-    const tree = responses[0].map((data) => {
-      return {
-        path: data.file,
-        mode: "100644",
-        type: "blob",
-        sha: data.blob.sha
+    return $.getJSON(
+      responses[1].commit.commit.tree.url,
+      { 
+        recursive: 1,
+        access_token: accessToken 
       }
-    });
-    const payload = {
-      base_tree: responses[1].commit.commit.tree.sha,
-      tree: tree
-    };
-    return $.ajax({
-      url: `${baseUrl}/repos/${context.repo.fullName}/git/trees`,
-      headers: {
-        "Authorization": `token ${accessToken}`
-      },
-      method: 'POST',
-      crossDomain: true,
-      dataType: 'json',
-      contentType: 'application/json',
-      data: JSON.stringify(payload)
+    )
+    .then((baseTree) => {
+      const tree = responses[0].map((data) => {
+        return {
+          path: data.file,
+          mode: "100644",
+          type: "blob",
+          sha: data.blob.sha
+        }
+      })
+      .concat(baseTree.tree.filter((t) =>  {
+        return (t.type != 'tree') && (!/.(gs|html)$/.test(t.path) || unchanged.indexOf(t.path) >= 0);
+      }));
+      return {
+        tree: tree
+      };
+    })
+    .then((payload) => {
+      return $.ajax({
+        url: `${baseUrl}/repos/${context.repo.fullName}/git/trees`,
+        headers: {
+          "Authorization": `token ${accessToken}`
+        },
+        method: 'POST',
+        crossDomain: true,
+        dataType: 'json',
+        contentType: 'application/json',
+        data: JSON.stringify(payload)
+      });
     })
     .then((response) => {
       return Object.assign(response, { parent: responses[1].commit.sha })

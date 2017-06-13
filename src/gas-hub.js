@@ -261,9 +261,10 @@ function showDiff(code, type) {
   const newCode = type === "push" ? code.gas : code.github;
   const gasFiles = Object.keys(code.gas);
   const githubFiles = Object.keys(code.github);
-  let diff = gasFiles.concat(githubFiles.filter((e) => {
+  let diff = githubFiles.filter((e) => {
     return gasFiles.indexOf(e) < 0;
-  }))
+  })
+  .concat(gasFiles)
   .reduce((diff, file) => {
     let mode = null;
     if (!oldCode[file]) {
