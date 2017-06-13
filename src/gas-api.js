@@ -1,8 +1,9 @@
 "use strict";
 
 function pull(code) {
-  const promises = $('.diff-file:checked').toArray().map((elem) => {
-    const file = elem.value;
+  const changed = $('.diff-file:checked').toArray().map(e => e.value);
+  const update_promises = changed.filter(f => code.github[f])
+  .map((file) => {
     const match = file.match(/(.*?)\.(gs|html)$/);
     if (!match || !match[1] || !match[2]) {
       showAlert('Unknow Error', LEVEL_ERROR);
@@ -16,20 +17,33 @@ function pull(code) {
       .then(() => {
         return gasUpdateFile(name, code.github[file]);
       })
-    } else if (!code.github[file]) {
-      return gasDeleteFile(name);
     } else {
       return gasUpdateFile(name, code.github[file]);
     }
   });
-  if (promises.length === 0) {
+
+  const delete_promises = changed.filter(f => !code.github[f])
+  .map((file) => {
+    const match = file.match(/(.*?)\.(gs|html)$/);
+    if (!match || !match[1] || !match[2]) {
+      showAlert('Unknow Error', LEVEL_ERROR);
+      return;
+    }
+    const name = match[1];
+    return gasDeleteFile(name);
+  });
+
+  if (update_promises.length === 0 && delete_promises.length === 0) {
     showAlert("Nothing to do", LEVEL_WARN);
     return;
   }
   
   getGasContext()
   .then(() => {
-    return Promise.all(promises)
+    return Promise.all(update_promises)
+    .then(() => {
+      return Promise.all(delete_promises);
+    })
   })
   .then(() => {
     showAlert("Successfully pulled from github");
