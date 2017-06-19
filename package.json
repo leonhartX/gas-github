@@ -1,0 +1,25 @@
+{
+  "name": "gas-github",
+  "version": "2.0.0",
+  "description": "Chrome-extension to manage Google Apps Script(GAS) code with github/github enterprise.",
+  "main": "src/gas-hub.js",
+  "dependencies": {
+    "eslint": "^4.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.0.0"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leonhartX/gas-github.git"
+  },
+  "author": "leonhartX",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leonhartX/gas-github/issues"
+  },
+  "homepage": "https://github.com/leonhartX/gas-github#readme"
+}
