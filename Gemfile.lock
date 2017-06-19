@@ -22,7 +22,7 @@ GEM
       kramdown (~> 1.5)
       octokit (~> 4.2)
       terminal-table (~> 1)
-    danger-eslint (0.1.0)
+    danger-eslint (0.1.1)
       danger-plugin-api (~> 1.0)
     danger-lgtm (0.2.0)
       danger-plugin-api (~> 1.0)
@@ -52,7 +52,7 @@ PLATFORMS
 
 DEPENDENCIES
   danger
-  danger-eslint
+  danger-eslint (~> 0.1.1)
   danger-lgtm
 
 BUNDLED WITH
