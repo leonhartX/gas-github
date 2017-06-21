@@ -1,0 +1,8 @@
+dependencies:
+  override:
+    - npm install --dev
+    - bundle install
+
+test:
+  override:
+    - danger
