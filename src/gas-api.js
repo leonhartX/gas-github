@@ -13,12 +13,12 @@ function pull(code) {
     const type = match[2];
     
     if (!code.gas[file]) {
-      return gasCreateFile(name, type)
+      return () => gasCreateFile(name, type)
       .then(() => {
         return gasUpdateFile(name, code.github[file]);
       })
     } else {
-      return gasUpdateFile(name, code.github[file]);
+      return () => gasUpdateFile(name, code.github[file]);
     }
   });
 
@@ -30,7 +30,7 @@ function pull(code) {
       return;
     }
     const name = match[1];
-    return gasDeleteFile(name);
+    return () => gasDeleteFile(name);
   });
 
   if (update_promises.length === 0 && delete_promises.length === 0) {
@@ -40,9 +40,9 @@ function pull(code) {
   
   getGasContext()
   .then(() => {
-    return Promise.all(update_promises)
+    return Promise.all(update_promises.map(f => f()))
     .then(() => {
-      return Promise.all(delete_promises);
+      return Promise.all(delete_promises.map(f => f()));
     })
   })
   .then(() => {
