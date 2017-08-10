@@ -28,7 +28,7 @@ function pushToRepo(code) {
       return {file: file, blob: response};
     })
   });
-  if (changed.lengthun === 0) {
+  if (changed.length === 0) {
     showAlert("Nothing to do", LEVEL_WARN);
     return;
   }
