@@ -11,7 +11,7 @@ function pull(code) {
     }
     const name = match[1];
     const type = match[2];
-    
+
     if (!code.gas[file]) {
       return () => gasCreateFile(name, type)
       .then(() => {
@@ -20,7 +20,8 @@ function pull(code) {
     } else {
       return () => gasUpdateFile(name, code.github[file]);
     }
-  });
+  })
+  .filter(n => n != undefined);
 
   const delete_promises = changed.filter(f => !code.github[f])
   .map((file) => {
@@ -37,7 +38,7 @@ function pull(code) {
     showAlert("Nothing to do", LEVEL_WARN);
     return;
   }
-  
+
   getGasContext()
   .then(() => {
     return Promise.all(update_promises.map(f => f()))
