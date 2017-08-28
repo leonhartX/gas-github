@@ -7,7 +7,7 @@ const LEVEL_WARN = "info";
 const LEVEL_INFO = "promo";
 const observer = new MutationObserver((e) => {
   observer.disconnect();
-  $('.github-alert').remove();  
+  $('.github-alert').remove();
 });
 
 $(() => {
@@ -80,14 +80,14 @@ function initLoginContent() {
     $('#login').hover(() => {
       $('#login').addClass('goog-toolbar-menu-button-hover');
     }, () => {
-      $('#login').removeClass('goog-toolbar-menu-button-hover'); 
+      $('#login').removeClass('goog-toolbar-menu-button-hover');
     });
     $('#login').click(() => {
       if (chrome.runtime.openOptionsPage) {
         chrome.runtime.openOptionsPage();
       } else {
         window.open(chrome.runtime.getURL('options/options.html'));
-      }  
+      }
     });
     chrome.runtime.sendMessage({ cmd: "tab" });
   });
@@ -99,7 +99,7 @@ function initPageEvent() {
     ['repo', 'branch'].forEach((type) => {
       const container = $(`.${type}-menu`);
       const button = $(`#${type}Select`);
-      if (!container.is(event.target) 
+      if (!container.is(event.target)
         && !button.is(event.target)
         && container.has(event.target).length === 0
         && button.has(event.target).length == 0) {
@@ -203,8 +203,8 @@ function initPageEvent() {
         break;
       default:
         return;
-    } 
-    context[type] = content;    
+    }
+    context[type] = content;
     const bindName = `bind${type.capitalize()}`;
     Object.assign(context[bindName], { [context.id] : content });
     chrome.storage.sync.set({ [bindName]: context[bindName] }, () => {
@@ -265,6 +265,11 @@ function showDiff(code, type) {
     return gasFiles.indexOf(e) < 0;
   })
   .concat(gasFiles)
+  .filter((file) => {
+    const match = file.match(/(.*?)\.(gs|html)$/);
+
+    return match && match[1] && match[2];
+  })
   .reduce((diff, file) => {
     let mode = null;
     if (!oldCode[file]) {
@@ -279,7 +284,7 @@ function showDiff(code, type) {
     if (mode) {
       diffArr.splice(1, 0, mode);
     }
-    fileDiff = diffArr.join('\n');   
+    fileDiff = diffArr.join('\n');
     return diff + fileDiff;
   }, "");
 
@@ -331,7 +336,7 @@ function showDiff(code, type) {
 function updateRepo(repos) {
   $('.repo-menu').empty().append('<div class="github-new-repo github-item goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
   $('.repo-menu').append('<div class="github-use-gist github-item goog-menuitem"><div class="goog-menuitem-content" github-content="repo" data="gist">Using Gist</div></div>');
-  
+
   repos.forEach((repo) => {
     let content = `<div class="github-item goog-menuitem"><div class="goog-menuitem-content" github-content="repo" data="${repo.fullName}">${repo.name}</div></div>`
     $('.repo-menu').append(content);
