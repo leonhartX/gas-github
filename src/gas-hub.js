@@ -267,7 +267,6 @@ function showDiff(code, type) {
   .concat(gasFiles)
   .filter((file) => {
     const match = file.match(/(.*?)\.(gs|html)$/);
-
     return match && match[1] && match[2];
   })
   .reduce((diff, file) => {
