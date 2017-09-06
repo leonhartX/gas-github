@@ -72,6 +72,10 @@
 .form .login-container .login-item-otp {
   display: none;
 }
+.form p input {
+  width: 15px;
+  margin: 15px 0 0 0;
+}
 
 
 body {

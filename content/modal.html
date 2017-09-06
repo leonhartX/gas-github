@@ -1,6 +1,7 @@
 <div id="diffModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 180px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Diff</span>
+    <span class="modal-dialog-title-text">(warning, only .gs and .html files will be synced)</span>
     <span class="github-diff-modal-close modal-dialog-title-close"></span>
   </div>
   <div class="modal-dialog-content">
@@ -45,6 +46,15 @@
             <tr class="properties-data-dialog-table-row">
               <td><div>Description</div></td>
               <td><input id="new-repo-desc" class="editable-row-input large-input" type="text"></td>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td><div>Type</div></td>
+              <td><div style="white-space: normal;">
+                <select id="new-repo-type">
+                  <option value="public">Public</option>
+                  <option value="secret">Private</option>
+                </select>
+              </div></td>
             </tr>
           </tbody>
         </table>
