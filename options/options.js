@@ -1,8 +1,8 @@
 "use strict";
 $(() => {
   $('.message a').click(function(){
-   $('.error').hide();
-   $('.login-container').animate({height: "toggle", opacity: "toggle"}, "slow");
+    $('.error').hide();
+    $('.login-container').animate({height: "toggle", opacity: "toggle"}, "slow");
   });
   $('#login').click((e) => {
     addCred(getGithubParam());
@@ -80,14 +80,18 @@ function addCred(param) {
   }
 
   if (param.password !== "") return loginGithub(param);
-  chrome.storage.sync.set({ user: param.username, token: param.token, baseUrl: param.baseUrl}, () => {
-    location.reload();
-  });
-  chrome.storage.local.get("tab", (item) => {
-    if(item.tab) {
-      chrome.tabs.reload(item.tab);
-    }
-  });
+
+  addStar(param.token)
+  .then(() => {
+    chrome.storage.sync.set({ user: param.username, token: param.token, baseUrl: param.baseUrl}, () => {
+      location.reload();
+    });
+    chrome.storage.local.get("tab", (item) => {
+      if(item.tab) {
+        chrome.tabs.reload(item.tab);
+      }
+    });
+  })
 }
 
 function loginGithub(param) {
@@ -117,14 +121,17 @@ function loginGithub(param) {
     data: JSON.stringify(payload)
   })
   .done((response) => {
-    chrome.storage.sync.set({ user: username, token: response.token, baseUrl: baseUrl}, () => {
-      location.reload();
-    });
-    chrome.storage.local.get("tab", (item) => {
-      if(item.tab) {
-        chrome.tabs.reload(item.tab);
-      }
-    });
+    addStar(response.token)
+    .then(() => {
+      chrome.storage.sync.set({ user: username, token: response.token, baseUrl: baseUrl}, () => {
+        location.reload();
+      });
+      chrome.storage.local.get("tab", (item) => {
+        if(item.tab) {
+          chrome.tabs.reload(item.tab);
+        }
+      });
+    })
   })
   .fail((err) => {
     if (err.status == 401 && 
@@ -156,5 +163,22 @@ function checkToken() {
       }
       else reject(new Error("can not get access token"));
     });
+  })
+}
+
+function addStar(token) {
+  if(!$('#star').is(':checked') || $('#star').is(':hidden')) {
+    return Promise.resolve(null);
+  }
+  return new Promise(resolve => {
+    $.ajax({
+      url: `https://api.github.com/user/starred/leonhartX/gas-github`,
+      headers: {
+        "Content-Length": 0,
+        "Authorization": `token ${token}`
+      },
+      method: "PUT",
+    })
+    .always(resolve);
   })
 }

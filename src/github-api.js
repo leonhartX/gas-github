@@ -28,7 +28,7 @@ function pushToRepo(code) {
       return {file: file, blob: response};
     })
   });
-  if (changed.lengthun === 0) {
+  if (changed.length === 0) {
     showAlert("Nothing to do", LEVEL_WARN);
     return;
   }
@@ -282,10 +282,12 @@ function getGithubRepos() {
 function githubCreateRepo() {
   const repo = $('#new-repo-name').val();
   const desc = $('#new-repo-desc').val();
+  const isPrivate = $('#new-repo-type').val() !== 'public';
   const payload = {
     name : repo,
     description : desc,
-    auto_init : true
+    auto_init : true,
+    private: isPrivate
   }
   if (!repo || repo === "") return;
   new Promise((resolve, reject) => {
@@ -322,6 +324,7 @@ function githubCreateRepo() {
   .then(() => {
     $('#new-repo-name').val("");
     $('#new-repo-desc').val("");
+    $('#new-repo-type').val("public");
     showAlert(`Successfully create new repository ${repo}`);
   })
   .catch((err) => {
