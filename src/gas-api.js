@@ -1,6 +1,6 @@
 'use strict';
 
-const Gas = class Gas {
+class Gas {
   pull(code) {
     const changed = $('.diff-file:checked').toArray().map(e => e.value);
     const update_promises = changed.filter(f => code.github[f])
@@ -61,7 +61,7 @@ const Gas = class Gas {
   * this is very volatile since it is just inferred from code
   */
   getGasContext() {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       chrome.storage.local.get(['requestUrl' ,'requestHeaders', 'requestBody', 'gasToken'], resolve);
     })
     .then((param) => {
@@ -73,11 +73,6 @@ const Gas = class Gas {
   }
 
   getGasCode() {
-    const files = $('.item').toArray().map((e) => {
-      const match = e.innerText.match(/(.*?)\.(gs|html)$/);
-      if (!match || !match[1] || !match[2]) return;
-      return match[1];
-    });
     return this.getGasContext()
     .then((requestBody) => {
       return $.ajax({

@@ -1,6 +1,6 @@
 'use strict';
 
-const Github = class Github {
+class Github {
   constructor(baseUrl, user, accessToken) {
     this.baseUrl = baseUrl;
     this.user = user;
