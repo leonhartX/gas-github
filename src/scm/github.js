@@ -1,6 +1,12 @@
 'use strict';
 
 const Github = class Github {
+  constructor(baseUrl, user, accessToken) {
+    this.baseUrl = baseUrl;
+    this.user = user;
+    this.accessToken = accessToken;
+  }
+
   push(code){
     if (context.gist) return this.pushToGist(code);
     return this.pushToRepo(code);
@@ -15,9 +21,9 @@ const Github = class Github {
         encoding: 'utf-8'
       };
       return $.ajax({
-        url: `${baseUrl}/repos/${context.repo.fullName}/git/blobs`,
+        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/blobs`,
         headers: {
-          'Authorization': `token ${accessToken}`
+          'Authorization': `token ${this.accessToken}`
         },
         method: 'POST',
         crossDomain: true,
@@ -37,8 +43,8 @@ const Github = class Github {
     Promise.all([
       Promise.all(promises),
       $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
-        { access_token: accessToken }
+        `${this.baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
+        { access_token: this.accessToken }
       )
     ])
     .then((responses) => {
@@ -46,7 +52,7 @@ const Github = class Github {
         responses[1].commit.commit.tree.url,
         { 
           recursive: 1,
-          access_token: accessToken 
+          access_token: this.accessToken 
         }
       )
       .then((baseTree) => {
@@ -67,9 +73,9 @@ const Github = class Github {
       })
       .then((payload) => {
         return $.ajax({
-          url: `${baseUrl}/repos/${context.repo.fullName}/git/trees`,
+          url: `${this.baseUrl}/repos/${context.repo.fullName}/git/trees`,
           headers: {
-            'Authorization': `token ${accessToken}`
+            'Authorization': `token ${this.accessToken}`
           },
           method: 'POST',
           crossDomain: true,
@@ -94,9 +100,9 @@ const Github = class Github {
         ]
       };
       return $.ajax({
-        url: `${baseUrl}/repos/${context.repo.fullName}/git/commits`,
+        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/commits`,
         headers: {
-          'Authorization': `token ${accessToken}`
+          'Authorization': `token ${this.accessToken}`
         },
         method: 'POST',
         crossDomain: true,
@@ -111,9 +117,9 @@ const Github = class Github {
         sha: response.sha
       };
       return $.ajax({
-        url: `${baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
+        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
         headers: {
-          'Authorization': `token ${accessToken}`
+          'Authorization': `token ${this.accessToken}`
         },
         method: 'PATCH',
         crossDomain: true,
@@ -152,9 +158,9 @@ const Github = class Github {
     }
     console.log(payload);
     return $.ajax({
-      url: `${baseUrl}/gists/${context.branch}`,
+      url: `${this.baseUrl}/gists/${context.branch}`,
       headers: {
-        'Authorization': `token ${accessToken}`
+        'Authorization': `token ${this.accessToken}`
       },
       method: 'PATCH',
       crossDomain: true,
@@ -170,12 +176,12 @@ const Github = class Github {
     });
   }
 
-  getAllGists(baseUrl, user, accessToken) {
-    return getAllItems(Promise.resolve({items: [], url: `${baseUrl}/users/${user}/gists?access_token=${accessToken}`}))
+  getAllGists() {
+    return getAllItems(Promise.resolve({items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}`}))
   }
 
-  getAllBranches(baseUrl, repo, accessToken) {
-    return getAllItems(Promise.resolve({items: [], url: `${baseUrl}/repos/${repo}/branches?access_token=${accessToken}`}))
+  getAllBranches() {
+    return getAllItems(Promise.resolve({items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}`}))
   }
 
   getCode() {
@@ -186,16 +192,16 @@ const Github = class Github {
   getRepoCode() {
     return new Promise((resolve, reject) => {
       $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
-        { access_token: accessToken }
+        `${this.baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
+        { access_token: this.accessToken }
       )
       .then(resolve)
       .fail(reject);
     })
     .then((response) => {
       return $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
-        { recursive: 1, access_token: accessToken }
+        `${this.baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
+        { recursive: 1, access_token: this.accessToken }
       );
     })
     .then((response) => {
@@ -204,7 +210,7 @@ const Github = class Github {
       })
       .map((tree) => {
         return new Promise((resolve, reject) => {
-          $.getJSON(tree.url, {access_token: accessToken })
+          $.getJSON(tree.url, {access_token: this.accessToken })
           .then((content) => {
             resolve({ file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
           })
@@ -218,8 +224,8 @@ const Github = class Github {
   getGistCode() {
     return new Promise((resolve, reject) => {
       $.getJSON(
-        `${baseUrl}/gists/${context.branch}`,
-        { access_token: accessToken }
+        `${this.baseUrl}/gists/${context.branch}`,
+        { access_token: this.accessToken }
       )
       .then(resolve)
       .fail(reject);
@@ -229,7 +235,7 @@ const Github = class Github {
         let file = response.files[filename];
         return new Promise((resolve, reject) => {
           if (file.truncated) {
-            $.getJSON(file.raw_url, {access_token: accessToken })
+            $.getJSON(file.raw_url, {access_token: this.accessToken })
             .then((content) => {
               resolve({ file: filename, content: content});
             })
@@ -244,7 +250,7 @@ const Github = class Github {
   }
 
   getRepos() {
-    return getAllItems(Promise.resolve({items: [], url: `${baseUrl}/user/repos?access_token=${accessToken}`}))
+    return getAllItems(Promise.resolve({items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}`}))
     .then((response) => {
       const repos = response.map((repo) => {
         return { name : repo.name, fullName : repo.full_name }
@@ -277,9 +283,9 @@ const Github = class Github {
     if (!repo || repo === '') return;
     new Promise((resolve, reject) => {
       $.ajax({
-        url: `${baseUrl}/user/repos`,
+        url: `${this.baseUrl}/user/repos`,
         headers: {
-          'Authorization': `token ${accessToken}`
+          'Authorization': `token ${this.accessToken}`
         },
         method: 'POST',
         crossDomain: true,
@@ -332,9 +338,9 @@ const Github = class Github {
 
     new Promise((resolve, reject) => {
       $.ajax({
-        url: `${baseUrl}/gists`,
+        url: `${this.baseUrl}/gists`,
         headers: {
-          'Authorization': `token ${accessToken}`
+          'Authorization': `token ${this.accessToken}`
         },
         method: 'POST',
         crossDomain: true,
@@ -368,8 +374,8 @@ const Github = class Github {
     if (!branch || branch === '') return;
     new Promise((resolve, reject) => {
       $.getJSON(
-        `${baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
-        { access_token: accessToken }
+        `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
+        { access_token: this.accessToken }
       )
       .then(resolve)
       .fail(reject)  
@@ -380,8 +386,8 @@ const Github = class Github {
       }
       else {
         return $.getJSON(
-          `${baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
-          { access_token: accessToken }
+          `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
+          { access_token: this.accessToken }
         )
         .then((response) => {
           return response[0].object.sha;
@@ -394,9 +400,9 @@ const Github = class Github {
         sha: sha
       };
       return $.ajax({
-        url: `${baseUrl}/repos/${context.repo.fullName}/git/refs`,
+        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/refs`,
         headers: {
-          'Authorization': `token ${accessToken}`
+          'Authorization': `token ${this.accessToken}`
         },
         method: 'POST',
         crossDomain: true,

@@ -3,7 +3,6 @@
 const gas = new Gas();
 let scm;
 let context = {};
-let baseUrl, accessToken, user;
 const LEVEL_ERROR = 'warning';
 const LEVEL_WARN = 'info';
 const LEVEL_INFO = 'promo';
@@ -47,10 +46,7 @@ function initContext() {
       if (!item.token) {
         reject(new Error('need login'));
       }
-      scm = createSCM(item.scm);
-      accessToken = item.token;
-      user = item.user;
-      baseUrl = item.baseUrl;
+      scm = createSCM(item);
       context.bindRepo = item.bindRepo || {};
       context.bindBranch = item.bindBranch || {};
       context.gist = context.bindRepo[context.id] && context.bindRepo[context.id].gist;
@@ -356,7 +352,7 @@ function updateGist() {
   if (!context.gist) {
     return null;
   }
-  return scm.getAllGists(baseUrl, user, accessToken)
+  return scm.getAllGists()
   .then((gists) => {
     $('.branch-menu').empty().append('<div class="scm-new-gist scm-item goog-menuitem"><div class="goog-menuitem-content">Create new gist</div></div>');
     gists.forEach((gist) => {
@@ -381,7 +377,7 @@ function updateBranch() {
   if (!context.repo || context.gist) {
     return null;
   }
-  return scm.getAllBranches(baseUrl, context.repo.fullName, accessToken)
+  return scm.getAllBranches()
   .then((branches) => {
     $('.branch-menu').empty().append('<div class="scm-new-branch scm-item goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
     branches.forEach((branch) => {

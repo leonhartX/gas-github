@@ -24,11 +24,11 @@ function getAllItems(promise) {
   })
 }
 
-function createSCM(scm) {
-  switch (scm) {
+function createSCM(item) {
+  switch (item.scm) {
     case 'github':
-      return new Github();
+      return new Github(item.baseUrl, item.user, item.token);
     default:
-      return new Github();
+      return new Github(item.baseUrl, item.user, item.token);
   }
 }
