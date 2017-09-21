@@ -185,17 +185,15 @@ function initPageEvent() {
     let label;
     switch (type) {
       case 'repo' :
-        if (context.repo && target.text() === context.repo.name) return;
+        if (context.repo && target.text() === context.repo.fullName) return;
         //update context.repo with name and fullName
-        const name = target.text();
         const fullName = target.attr('data');
         content = {
-          name: name,
           fullName : fullName,
           gist: fullName === 'gist'
         }
-        label = name;
-        context.gist = content.gist
+        label = fullName;
+        context.gist = content.gist;
         break;
       case 'branch' :
         if (context[type] && target.text() === context[type]) return;
@@ -335,15 +333,15 @@ function showDiff(code, type) {
 
 function updateRepo(repos) {
   $('.repo-menu').empty().append('<div class="scm-new-repo scm-item goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
-  $('.repo-menu').append('<div class="scm-use-gist scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="gist">Using Gist</div></div>');
+  $('.repo-menu').append('<div class="scm-use-gist scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="gist">gist</div></div>');
 
   repos.forEach((repo) => {
-    let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="${repo.fullName}">${repo.fullName}</div></div>`
+    let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="${repo}">${repo}</div></div>`
     $('.repo-menu').append(content);
   });
   if (context.repo) {
-    $('#scm-bind-repo').text(`Repo: ${context.repo.name}`);
-    return context.repo.name;
+    $('#scm-bind-repo').text(`Repo: ${context.repo.fullName}`);
+    return context.repo.fullName;
   }
   return null;
 }
