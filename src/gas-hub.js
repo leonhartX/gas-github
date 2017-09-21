@@ -338,7 +338,7 @@ function updateRepo(repos) {
   $('.repo-menu').append('<div class="scm-use-gist scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="gist">Using Gist</div></div>');
 
   repos.forEach((repo) => {
-    let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="${repo.fullName}">${repo.name}</div></div>`
+    let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="${repo.fullName}">${repo.fullName}</div></div>`
     $('.repo-menu').append(content);
   });
   if (context.repo) {
