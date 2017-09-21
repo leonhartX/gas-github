@@ -26,7 +26,7 @@
           </div>
           <button id="login">github login</button>
           <p class="label"><input type="checkbox" name="star" id="star">Star this extension on Github for support</p>
-          <p class="message">Switch to <a id="github" href="#">Github</a>, <a id="ghe" href="#">Github Enterprise</a>, <a id="bitbucket" href="#">Bitbucket</a></p>
+          <p class="message">Switch to <a name="ghe" href="#">Github Enterprise</a> or <a name="bitbucket" href="#">Bitbucket</a></p>
           <p class="error" style="display: none">Can not create access token, please check your username and password.</p>
         </div>
         <div class="login-container ghe-login-container">
@@ -43,18 +43,19 @@
           </div>
           <button id="ghe-login">github enterprise login</button>
           <p class="message">Please star this extension on <a href="https://github.com/leonhartX/gas-github">Github</a> for support</p>
-          <p class="message">Switch to <a id="github" href="#">Github</a>, <a id="ghe" href="#">Github Enterprise</a>, <a id="bitbucket" href="#">Bitbucket</a></p>
+          <p class="message">Switch to <a name="github" href="#">Github</a> or <a name="bitbucket" href="#">Bitbucket</a></p>
           <p class="error" style="display: none">Can not create access token, please check your GHE domain, username and password.</p>
         </div>
 
         <div class="login-container bitbucket-login-container">
           <div class="login-item login-item-basic">
-            <input id="bitbucket-username" type="text" placeholder="email"/>
+            <input id="bitbucket-username" type="text" placeholder="username"/>
+            <input id="bitbucket-email" type="email" placeholder="email"/>
             <input id="bitbucket-password" type="password" placeholder="password"/>
           </div>
           <button id="bitbucket-login">bitbucket login</button>
           <p class="message">Please star this extension on <a href="https://github.com/leonhartX/gas-github">Github</a> for support</p>
-          <p class="message">Switch to <a id="github" href="#">Github</a>, <a id="ghe" href="#">Github Enterprise</a>, <a id="bitbucket" href="#">Bitbucket</a></p>
+          <p class="message">Switch to <a name="github" href="#">Github</a> or <a name="ghe" href="#">Github Enterprise</a></p>
           <p class="error" style="display: none">Can not login, please check your username and password.</p>
       </div>
     </div>

@@ -4,7 +4,7 @@ $(() => {
   $('.message a').click(function(e){
     $('.error').hide();
     $('.login-container').animate({height: 'hide', opacity: 'hide'}, 'slow');
-    $(`.${e.target.id}-login-container`).animate({height: 'show', opacity: 'show'}, 'slow');
+    $(`.${e.target.name}-login-container`).animate({height: 'show', opacity: 'show'}, 'slow');
   });
   $('#login').click((e) => {
     addCred(getGithubParam());
@@ -23,9 +23,8 @@ $(() => {
   .then((item) => {
     $('.login-container').hide();
     $('.logout-container').show();
-    let user, domain, userLink, tokenLink;
+    let user = item.user, domain, userLink, tokenLink;
     if(item.scm !== 'bitbucket') {
-      user = item.user;
       domain = '@Github.com';
       userLink = `https://github.com/${item.user}`;
       tokenLink = 'https://github.com/settings/tokens';
@@ -42,10 +41,9 @@ $(() => {
         }
       }
     } else {
-      user = item.user.split('@')[0];
       domain = '@Bitbucket.org';
-      userLink = `https://bitbucket.org/dashboard/overview`;
-      tokenLink = `https://bitbucket.org/dashboard/overview`; //can not get user info from email
+      userLink = `https://bitbucket.org/${user}`;
+      tokenLink = `https://bitbucket.org/account/user/${user}/api`;
     }
 
     $('#login-user').text(`${user}${domain}`).attr('href', userLink);
@@ -93,11 +91,13 @@ function getGHEParam() {
 function getBitbucketParam() {
   const scm = 'bitbucket';
   const username = $('#bitbucket-username').val();
+  const email = $('#bitbucket-email').val();
   const password = $('#bitbucket-password').val();
   const baseUrl = `https://api.bitbucket.org/2.0`;
   return {
     scm,
     username,
+    email,
     password,
     baseUrl
   }
@@ -116,7 +116,7 @@ function addCred(param) {
 
   addStar(param.token)
   .then(() => {
-    chrome.storage.sync.set({ user: param.username, token: param.token, baseUrl: param.baseUrl, scm: param.scm}, () => {
+    chrome.storage.sync.set({scm: param.scm, user: param.username, token: param.token, baseUrl: param.baseUrl}, () => {
       location.reload();
     });
     chrome.storage.local.get('tab', (item) => {
@@ -156,7 +156,7 @@ function loginGithub(param) {
   .done((response) => {
     addStar(response.token)
     .then(() => {
-      chrome.storage.sync.set({ scm: param.scm, user: username, token: response.token, baseUrl: baseUrl}, () => {
+      chrome.storage.sync.set({scm: param.scm, user: username, token: response.token, baseUrl: baseUrl}, () => {
         location.reload();
       });
       chrome.storage.local.get('tab', (item) => {
@@ -179,6 +179,7 @@ function loginGithub(param) {
 
 function loginBitbucket(param) {
   const username = param.username;
+  const email = param.email;
   const password = param.password;
   const baseUrl = param.baseUrl;
   const headers = {
@@ -192,12 +193,12 @@ function loginBitbucket(param) {
     contentType: 'application/x-www-form-urlencoded',
     data: {
       grant_type: 'password',
-      username: username,
+      username: email,
       password: password
     }
   })
   .done((response) => {
-    chrome.storage.sync.set({ scm: param.scm, user: username, token: response.refresh_token, baseUrl: baseUrl}, () => {
+    chrome.storage.sync.set({scm: param.scm, user: username, token: response.refresh_token, baseUrl: baseUrl}, () => {
       location.reload();
     });
     chrome.storage.local.get('tab', (item) => {
@@ -224,7 +225,7 @@ function logout() {
 
 function checkToken() {
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['token', 'user', 'baseUrl', 'scm'], (item) => {
+    chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl'], (item) => {
       if (item.token && item.token !== ''){
         resolve(item);
       }
