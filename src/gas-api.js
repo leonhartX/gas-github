@@ -3,7 +3,7 @@
 class Gas {
   pull(code) {
     const changed = $('.diff-file:checked').toArray().map(e => e.value);
-    const update_promises = changed.filter(f => code.github[f])
+    const updatePromises = changed.filter(f => code.github[f])
     .map((file) => {
       const match = file.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) {
@@ -24,7 +24,7 @@ class Gas {
     })
     .filter(n => n != undefined);
 
-    const delete_promises = changed.filter(f => !code.github[f])
+    const deletePromises = changed.filter(f => !code.github[f])
     .map((file) => {
       const match = file.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) {
@@ -35,16 +35,16 @@ class Gas {
       return () => this.gasDeleteFile(name);
     });
 
-    if (update_promises.length === 0 && delete_promises.length === 0) {
+    if (updatePromises.length === 0 && deletePromises.length === 0) {
       showAlert('Nothing to do', LEVEL_WARN);
       return;
     }
 
     this.getGasContext()
     .then(() => {
-      return Promise.all(update_promises.map(f => f()))
+      return Promise.all(updatePromises.map(f => f()))
       .then(() => {
-        return Promise.all(delete_promises.map(f => f()));
+        return Promise.all(deletePromises.map(f => f()));
       })
     })
     .then(() => {
