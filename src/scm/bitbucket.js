@@ -5,6 +5,7 @@ class Bitbucket {
     this.baseUrl = baseUrl;
     this.user = user;
     this.token = token;
+    this.accessToken = null;
   }
 
   getAccessToken() {
@@ -26,7 +27,8 @@ class Bitbucket {
       .fail(reject)
     })
     .then(response => {
-      chrome.storage.sync.set({ token: response.refresh_token })
+      chrome.storage.sync.set({ token: response.refresh_token });
+      this.accessToken = response.access_token;
       return response.access_token;
     })
     .catch(err => {
@@ -34,129 +36,46 @@ class Bitbucket {
     })
   }
 
-  push(code){
-    if (context.gist) return this.pushToGist(code);
-    return this.pushToRepo(code);
+  commitFiles(repo, branch, files, deleteFiles, comment) {
+    return new Promise((resolve, reject) => {
+      let data = files.reduce((hash, f) => {
+        hash[f.name] = f.content;
+        return hash;
+      }, {});
+      data.message = comment;
+      if (deleteFiles && deleteFiles.length > 0) {
+        data.files = deleteFiles;
+      }
+      if (branch) {
+        data.branch = branch;
+      }
+      $.ajax({
+        url: `${this.baseUrl}/repositories/${repo}/src`,
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}` 
+        },
+        contentType: 'application/x-www-form-urlencoded',
+        method: 'POST',
+        crossDomain: true,
+        traditional: true,
+        data: data,
+      })
+      .then(resolve)
+      .fail(reject);
+    });
   }
 
-  pushToRepo(code) {
+  push(code){
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
-    const unchanged = Object.keys(code.gas).filter((f) => changed.indexOf(f) < 0 );
-    const promises = changed.filter(f => code.gas[f]).map((file) => {
-      const payload = {
-        content: code.gas[file],
-        encoding: 'utf-8'
-      };
-      return $.ajax({
-        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/blobs`,
-        headers: {
-          'Authorization': `token ${this.accessToken}`
-        },
-        method: 'POST',
-        crossDomain: true,
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(payload)
-      })
-      .then((response) => {
-        return {file: file, blob: response};
-      })
+    const files = changed.filter(f => code.gas[f]).map(f => {
+      return { name: f, content: code.gas[f] }
     });
-    if (changed.length === 0) {
-      showAlert('Nothing to do', LEVEL_WARN);
-      return;
-    }
+    const deleteFiles = changed.filter(f => !code.gas[f]);
+    const comment = $('#commit-comment').val();
 
-    Promise.all([
-      Promise.all(promises),
-      $.getJSON(
-        `${this.baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
-        { access_token: this.accessToken }
-      )
-    ])
-    .then((responses) => {
-      return $.getJSON(
-        responses[1].commit.commit.tree.url,
-        { 
-          recursive: 1,
-          access_token: this.accessToken 
-        }
-      )
-      .then((baseTree) => {
-        const tree = responses[0].map((data) => {
-          return {
-            path: data.file,
-            mode: '100644',
-            type: 'blob',
-            sha: data.blob.sha
-          }
-        })
-        .concat(baseTree.tree.filter((t) =>  {
-          return (t.type != 'tree') && (!/.(gs|html)$/.test(t.path) || unchanged.indexOf(t.path) >= 0);
-        }));
-        return {
-          tree: tree
-        };
-      })
-      .then((payload) => {
-        return $.ajax({
-          url: `${this.baseUrl}/repos/${context.repo.fullName}/git/trees`,
-          headers: {
-            'Authorization': `token ${this.accessToken}`
-          },
-          method: 'POST',
-          crossDomain: true,
-          dataType: 'json',
-          contentType: 'application/json',
-          data: JSON.stringify(payload)
-        });
-      })
-      .then((response) => {
-        return Object.assign(response, { parent: responses[1].commit.sha })
-      })
-      .fail((err) => {
-        throw err;
-      });
-    })
-    .then((response) => {
-      const payload = {
-        message: $('#commit-comment').val(),
-        tree: response.sha,
-        parents: [
-          response.parent
-        ]
-      };
-      return $.ajax({
-        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/commits`,
-        headers: {
-          'Authorization': `token ${this.accessToken}`
-        },
-        method: 'POST',
-        crossDomain: true,
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(payload)
-      });
-    })
-    .then((response) => {
-      const payload = {
-        force: true,
-        sha: response.sha
-      };
-      return $.ajax({
-        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
-        headers: {
-          'Authorization': `token ${this.accessToken}`
-        },
-        method: 'PATCH',
-        crossDomain: true,
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(payload)
-      });
-    })
+    this.commitFiles(context.repo.fullName, context.branch, files, deleteFiles, comment)
     .then(() => {
-      showAlert(`Successfully push to ${context.branch} of ${context.repo.name}`);
+      showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
     })
     .catch((err) => {
       showAlert('Failed to push', LEVEL_ERROR);
@@ -170,7 +89,9 @@ class Bitbucket {
         token: accessToken,
         items: [], 
         url: `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches?access_token=${accessToken}`
-      }), 'bitbucket');
+      }),
+      this.followPaginate,
+      'bitbucket');
     })
   }
 
@@ -181,28 +102,31 @@ class Bitbucket {
         `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`,
         { access_token: accessToken }
       )
+    })
+    .then(response => {
+      return getAllItems(Promise.resolve({
+        token: this.accessToken,
+        items: [], 
+        urls: [],
+        url: `${this.baseUrl}/repositories/${context.repo.fullName}/src/${response.target.hash}/?access_token=${this.accessToken}`
+      }),
+      this.followDirectory,
+      'bitbucket')
       .then(response => {
-        return getAllItems(Promise.resolve({
-          token: accessToken,
-          items: [], 
-          url: `${this.baseUrl}/repositories/${context.repo.fullName}/src/${response.target.hash}/?access_token=${accessToken}`
-        }), 'bitbucket')
-        .then(response => {
-          const promises = response.filter(src => {
-            return src.type === 'commit_file' && /(\.gs|\.html)$/.test(src.path);
-          })
-          .map(src => {
-            return new Promise((resolve, reject) => {
-              $.get(src.links.self.href, { access_token: accessToken })
-              .then(content => {
-                resolve({ file: src.path, content: content});
-              })
-              .fail(reject)
-            });
+        const promises = response.filter(src => {
+          return src.type === 'commit_file' && /(\.gs|\.html)$/.test(src.path);
+        })
+        .map(src => {
+          return new Promise((resolve, reject) => {
+            $.get(src.links.self.href, { access_token: this.accessToken })
+            .then(content => {
+              resolve({ file: src.path, content: content});
+            })
+            .fail(reject)
           });
-          return Promise.all(promises);
         });
-      })
+        return Promise.all(promises);
+      });
     })
   }
 
@@ -213,15 +137,15 @@ class Bitbucket {
         token: accessToken,
         items: [], 
         url: `${this.baseUrl}/repositories/?access_token=${accessToken}&q=scm="git"&role=contributor`
-      }), 'bitbucket');
+      }),
+      this.followPaginate,
+      'bitbucket');
     })
     .then(response => {
-      const repos = response.map(repo => {
-        return { name : repo.name, fullName : repo.full_name }
-      });
+      const repos = response.map(repo => repo.full_name);
       //if current bind still existed, use it
       const repo = context.bindRepo[context.id];
-      if (repo && $.inArray(repo.name, repos.map(repo => repo.fullName)) >= 0 ) {
+      if (repo && $.inArray(repo.fullName, repos) >= 0) {
         context.repo = repo;
       }
       return repos;
@@ -233,17 +157,16 @@ class Bitbucket {
     const desc = $('#new-repo-desc').val();
     const isPrivate = $('#new-repo-type').val() !== 'public';
     const payload = {
-      name : repo,
+      scm: 'git',
       description : desc,
-      auto_init : true,
-      private: isPrivate
+      is_private: isPrivate
     }
     if (!repo || repo === '') return;
     new Promise((resolve, reject) => {
       $.ajax({
-        url: `${this.baseUrl}/user/repos`,
+        url: `${this.baseUrl}/repositories/${this.user}/${repo}`,
         headers: {
-          'Authorization': `token ${this.accessToken}`
+          'Authorization': `Bearer ${this.accessToken}`
         },
         method: 'POST',
         crossDomain: true,
@@ -256,7 +179,6 @@ class Bitbucket {
     })
     .then((response) => {
       const repo = {
-        name : response.name,
         fullName : response.full_name
       };
       context.repo = repo;
@@ -265,9 +187,12 @@ class Bitbucket {
         delete context.bindBranch[context.id];
       }
       chrome.storage.sync.set({ bindRepo: context.bindRepo });
-      return response;
+      return response.full_name;
     })
-    .then(getGithubRepos)
+    .then(repo => {
+      return this.commitFiles(repo, 'master', [{name: "README.md", content: "initialed by gas-github"}], null, 'initial commit');
+    })
+    .then(this.getRepos.bind(this))
     .then(updateRepo)
     .then(updateBranch)
     .then(() => {
@@ -284,62 +209,62 @@ class Bitbucket {
   createBranch() {
     const branch = $('#new-branch-name').val();
     if (!branch || branch === '') return;
-    new Promise((resolve, reject) => {
-      $.getJSON(
-        `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
-        { access_token: this.accessToken }
-      )
-      .then(resolve)
-      .fail(reject)  
-    })
-    .then((response) => {
-      if (response.object) {
-        return response.object.sha;
-      }
-      else {
-        return $.getJSON(
-          `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
-          { access_token: this.accessToken }
-        )
-        .then((response) => {
-          return response[0].object.sha;
-        })
-      }
-    })
-    .then((sha) => {
-      const payload = {
-        ref: `refs/heads/${branch}`,
-        sha: sha
-      };
-      return $.ajax({
-        url: `${this.baseUrl}/repos/${context.repo.fullName}/git/refs`,
-        headers: {
-          'Authorization': `token ${this.accessToken}`
-        },
-        method: 'POST',
-        crossDomain: true,
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(payload)
-      });
-    })
-    .then((response) => {
-      context.branch = branch;
+    context.branch = branch;
+    this.commitFiles(context.repo.fullName, branch, [], null, 'new branch')
+    .then(() => {
       Object.assign(context.bindBranch, { [context.id] : branch });
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
-      return context.repo.name;
+      return branch;
     })
     .then(updateBranch)
     .then(() => {
       $('#new-branch-name').val('');
       showAlert(`Successfully create new branch: ${branch}`);
     })
-    .catch((err) => {
-      if (err.status === 409) {
-        showAlert('Cannot create branch in empty repository with API, try to create branch in Github.', LEVEL_ERROR);
-      } else {
-        showAlert('Failed to create new branch.', LEVEL_ERROR);
-      }
+    .catch(err => {
+      showAlert('Failed to create new branch.', LEVEL_ERROR);
     });
+    
+  }
+
+  followPaginate(data) {
+    return new Promise((resolve, reject) => {
+      $.getJSON(data.url)
+      .then(response => {
+        data.items = data.items.concat(response.values);
+        const link = response.next;
+        let url = null;
+        if (link) {
+          url = `${link}&access_token=${data.token}`;
+        }
+        resolve({ items: data.items, url: url });
+      })
+      .fail(reject);
+    })
+  }
+
+  followDirectory(data) {
+    return new Promise((resolve, reject) => {
+      $.getJSON(data.url)
+      .then(response => {
+        const dirs = response.values.filter(src => {
+          return src.type === 'commit_directory';
+        }).map(dir => {
+          return `${dir.links.self.href}?access_token=${data.token}`;
+        })
+        const files = response.values.filter(src => {
+          return src.type === 'commit_file' && /(\.gs|\.html)$/.test(src.path);
+        });
+        data.items = data.items.concat(files);
+        data.urls = data.urls.concat(dirs);
+        let link = response.next;
+        if (link) {
+          data.urls.push(`${link}&access_token=${data.token}`);
+        }
+        data.url = data.urls.shift();
+        resolve(data);
+      })
+      .fail(reject);
+    })
   }
 }
