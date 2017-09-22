@@ -241,7 +241,7 @@ function prepareCode() {
         if (elem) hash[files[elem.file]] = elem.content;
         return hash;
       }, {}),
-      github: data[1].reduce((hash, elem) => {
+      scm: data[1].reduce((hash, elem) => {
         if (elem) hash[elem.file] = elem.content;
         return hash;
       }, {})
@@ -251,16 +251,16 @@ function prepareCode() {
 }
 
 function showDiff(code, type) {
-  if (Object.keys(code.github).length === 0 && type === 'pull') {
+  if (Object.keys(code.scm).length === 0 && type === 'pull') {
     showAlert('There is nothing to pull', LEVEL_WARN);
     return;
   }
   //setting the diff model
-  const oldCode = type === 'push' ? code.github : code.gas;
-  const newCode = type === 'push' ? code.gas : code.github;
+  const oldCode = type === 'push' ? code.scm : code.gas;
+  const newCode = type === 'push' ? code.gas : code.scm;
   const gasFiles = Object.keys(code.gas);
-  const githubFiles = Object.keys(code.github);
-  let diff = githubFiles.filter((e) => {
+  const scmFiles = Object.keys(code.scm);
+  let diff = scmFiles.filter((e) => {
     return gasFiles.indexOf(e) < 0;
   })
   .concat(gasFiles)
@@ -385,7 +385,7 @@ function updateBranch() {
     let branch = context.bindBranch[context.id];
     if (branches.length === 0) {
       branch = '';
-      showAlert('This repository is empty, try to create a new branch such as [master] in Github.', LEVEL_WARN);
+      showAlert('This repository is empty, try to create a new branch such as [master] in Github or Bitbucket', LEVEL_WARN);
     } else if ($.inArray(branch, branches.map(branch => branch.name)) < 0) {
       branch = ($.inArray("master", branches.map(branch => branch.name)) >= 0) ? 'master' : branches[0].name;
     }
