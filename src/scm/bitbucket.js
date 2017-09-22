@@ -8,6 +8,14 @@ class Bitbucket {
     this.accessToken = null;
   }
 
+  get name() {
+    return 'bitbucket';
+  }
+
+  get canUseGist() {
+    return false;
+  }  
+
   getAccessToken() {
     return new Promise((resolve, reject) => {
       $.ajax({

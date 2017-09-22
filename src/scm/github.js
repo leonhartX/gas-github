@@ -7,6 +7,14 @@ class Github {
     this.accessToken = accessToken;
   }
 
+  get name() {
+    return 'github';
+  }
+
+  get canUseGist() {
+    return true;
+  }
+
   push(code){
     if (context.gist) return this.pushToGist(code);
     return this.pushToRepo(code);

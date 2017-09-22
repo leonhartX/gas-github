@@ -48,7 +48,7 @@ class Gas {
       })
     })
     .then(() => {
-      showAlert('Successfully pulled from github');
+      showAlert('Successfully pulled from scm');
       location.reload();
     })
     .catch((err) => {
