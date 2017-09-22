@@ -92,7 +92,7 @@ class Bitbucket {
       }),
       this.followPaginate,
       'bitbucket');
-    })
+    });
   }
 
   getCode() {
@@ -113,10 +113,7 @@ class Bitbucket {
       this.followDirectory,
       'bitbucket')
       .then(response => {
-        const promises = response.filter(src => {
-          return src.type === 'commit_file' && /(\.gs|\.html)$/.test(src.path);
-        })
-        .map(src => {
+        const promises = response.map(src => {
           return new Promise((resolve, reject) => {
             $.get(src.links.self.href, { access_token: this.accessToken })
             .then(content => {
@@ -127,7 +124,7 @@ class Bitbucket {
         });
         return Promise.all(promises);
       });
-    })
+    });
   }
 
   getRepos() {
@@ -149,7 +146,7 @@ class Bitbucket {
         context.repo = repo;
       }
       return repos;
-    })
+    });
   }
 
   createRepo() {
@@ -162,8 +159,9 @@ class Bitbucket {
       is_private: isPrivate
     }
     if (!repo || repo === '') return;
-    new Promise((resolve, reject) => {
-      $.ajax({
+    this.getAccessToken()
+    .then(() => {
+      return $.ajax({
         url: `${this.baseUrl}/repositories/${this.user}/${repo}`,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
@@ -174,8 +172,6 @@ class Bitbucket {
         contentType: 'application/json',
         data: JSON.stringify(payload)
       })
-      .then(resolve)
-      .fail(reject);
     })
     .then((response) => {
       const repo = {
@@ -210,7 +206,10 @@ class Bitbucket {
     const branch = $('#new-branch-name').val();
     if (!branch || branch === '') return;
     context.branch = branch;
-    this.commitFiles(context.repo.fullName, branch, [], null, 'new branch')
+    this.getAccessToken()
+    .then(() => {
+      return this.commitFiles(context.repo.fullName, branch, [], null, `create new branch ${branch}`);
+    })
     .then(() => {
       Object.assign(context.bindBranch, { [context.id] : branch });
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
