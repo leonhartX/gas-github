@@ -150,7 +150,7 @@ class Github {
         content: code.gas[file]
       };
     });
-    if (code.github['init_by_gas_hub.html']) {
+    if (code.scm['init_by_gas_hub.html']) {
       payload.files['init_by_gas_hub.html'] = null;
     }
     if ($('#gist-desc').val() !== '') {
@@ -176,11 +176,19 @@ class Github {
   }
 
   getAllGists() {
-    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}` }), 'github');
+    return getAllItems(
+      Promise.resolve({ items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}` }),
+      this.followPaginate,
+      'github'
+    );
   }
 
   getAllBranches() {
-    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}` }), 'github');
+    return getAllItems(
+      Promise.resolve({ items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}` }),
+      this.followPaginate,
+      'github'
+    );
   }
 
   getCode() {
@@ -249,7 +257,11 @@ class Github {
   }
 
   getRepos() {
-    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}` }), 'github')
+    return getAllItems(
+      Promise.resolve({ items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}` }),
+      this.followPaginate,  
+      'github'
+    )
     .then(response => {
       const repos = response.map(repo => repo.full_name);
       //if current bind still existed, use it
@@ -423,6 +435,23 @@ class Github {
       } else {
         showAlert('Failed to create new branch.', LEVEL_ERROR);
       }
+    });
+  }
+  
+  followPaginate(data) {
+    return new Promise((resolve, reject) => {
+      $.getJSON(data.url)
+      .then((response, status, xhr) => {
+        data.items = data.items.concat(response);
+        const link = xhr.getResponseHeader('Link');
+        let url = null;
+        if (link) {
+          const match = link.match(/<(.*?)>; rel="next"/);
+          url = match && match[1] ? match[1] : null;
+        }
+        resolve({ items: data.items, url: url });
+      })
+      .fail(reject);
     });
   }
 }
