@@ -3,6 +3,6 @@
     "message": "Google Apps Script Github Assistant"
   },
   "appDesc": {
-    "message": "Manage your gas code with github(or github enterprise)"
+    "message": "Manage your gas code with github/github enterprise/bitbucket"
   }
 }

@@ -3,6 +3,6 @@
     "message": "Google Apps Script Github 助手"
   },
   "appDesc": {
-    "message": "使用Github或Github Enterprise管理GAS的inline代码"
+    "message": "使用Github/Github Enterprise/Bitbucket管理GAS的inline代码"
   }
 }
