@@ -31,7 +31,7 @@ class Github {
         contentType: 'application/json',
         data: JSON.stringify(payload)
       })
-      .then((response) => {
+      .then(response => {
         return {file: file, blob: response};
       })
     });
@@ -47,7 +47,7 @@ class Github {
         { access_token: this.accessToken }
       )
     ])
-    .then((responses) => {
+    .then(responses => {
       return $.getJSON(
         responses[1].commit.commit.tree.url,
         { 
@@ -55,7 +55,7 @@ class Github {
           access_token: this.accessToken 
         }
       )
-      .then((baseTree) => {
+      .then(baseTree => {
         const tree = responses[0].map((data) => {
           return {
             path: data.file,
@@ -71,7 +71,7 @@ class Github {
           tree: tree
         };
       })
-      .then((payload) => {
+      .then(payload => {
         return $.ajax({
           url: `${this.baseUrl}/repos/${context.repo.fullName}/git/trees`,
           headers: {
@@ -84,14 +84,14 @@ class Github {
           data: JSON.stringify(payload)
         });
       })
-      .then((response) => {
+      .then(response => {
         return Object.assign(response, { parent: responses[1].commit.sha })
       })
-      .fail((err) => {
+      .fail(err => {
         throw err;
-      })
+      });
     })
-    .then((response) => {
+    .then(response => {
       const payload = {
         message: $('#commit-comment').val(),
         tree: response.sha,
@@ -111,7 +111,7 @@ class Github {
         data: JSON.stringify(payload)
       });
     })
-    .then((response) => {
+    .then(response => {
       const payload = {
         force: true,
         sha: response.sha
@@ -129,9 +129,9 @@ class Github {
       });
     })
     .then(() => {
-      showAlert(`Successfully push to ${context.branch} of ${context.repo.name}`);
+      showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
     })
-    .catch((err) => {
+    .catch(err => {
       showAlert('Failed to push', LEVEL_ERROR);
     });
   }
@@ -145,18 +145,17 @@ class Github {
     const payload = {
       files: {}
     };
-    files.forEach((file) => {
+    files.forEach(file => {
       payload.files[file] = {
         content: code.gas[file]
       };
-    })
+    });
     if (code.github['init_by_gas_hub.html']) {
       payload.files['init_by_gas_hub.html'] = null;
     }
     if ($('#gist-desc').val() !== '') {
       payload.description = $('#gist-desc').val();
     }
-    console.log(payload);
     return $.ajax({
       url: `${this.baseUrl}/gists/${context.branch}`,
       headers: {
@@ -171,17 +170,17 @@ class Github {
     .then(() => {
       showAlert(`Successfully update gist: ${context.branch}`);
     })
-    .fail((err) => {
+    .fail(err => {
       showAlert('Failed to update', LEVEL_ERROR);
     });
   }
 
   getAllGists() {
-    return getAllItems(Promise.resolve({items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}`}))
+    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}` }), 'github');
   }
 
   getAllBranches() {
-    return getAllItems(Promise.resolve({items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}`}))
+    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}` }), 'github');
   }
 
   getCode() {
@@ -198,21 +197,21 @@ class Github {
       .then(resolve)
       .fail(reject);
     })
-    .then((response) => {
+    .then(response => {
       return $.getJSON(
         `${this.baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
         { recursive: 1, access_token: this.accessToken }
       );
     })
-    .then((response) => {
+    .then(response => {
       const promises = response.tree.filter((tree) => {
         return tree.type === 'blob' && /(\.gs|\.html)$/.test(tree.path);
       })
-      .map((tree) => {
+      .map(tree => {
         return new Promise((resolve, reject) => {
-          $.getJSON(tree.url, {access_token: this.accessToken })
+          $.getJSON(tree.url, { access_token: this.accessToken })
           .then((content) => {
-            resolve({ file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
+            resolve({ file: tree.path, content: decodeURIComponent(escape(atob(content.content))) });
           })
           .fail(reject)
         });
@@ -250,24 +249,21 @@ class Github {
   }
 
   getRepos() {
-    return getAllItems(Promise.resolve({items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}`}))
-    .then((response) => {
-      const repos = response.map((repo) => {
-        return { name : repo.name, fullName : repo.full_name }
-      });
+    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}` }), 'github')
+    .then(response => {
+      const repos = response.map(repo => repo.full_name);
       //if current bind still existed, use it
       const repo = context.bindRepo[context.id];
-      if (repo && $.inArray(repo.name, repos.map(repo => repo.name)) >= 0 ) {
+      if (repo && $.inArray(repo.fullName, repos) >= 0) {
         context.repo = repo;
       } else if (context.gist) {
         context.repo = {
-          name: 'Using Gist',
           fullName: 'gist',
           gist: true
         }
       }
       return repos;
-    })
+    });
   }
 
   createRepo() {
@@ -296,9 +292,8 @@ class Github {
       .then(resolve)
       .fail(reject);
     })
-    .then((response) => {
+    .then(response => {
       const repo = {
-        name : response.name,
         fullName : response.full_name
       };
       context.repo = repo;
@@ -309,7 +304,7 @@ class Github {
       chrome.storage.sync.set({ bindRepo: context.bindRepo });
       return response;
     })
-    .then(getGithubRepos)
+    .then(this.getRepos.bind(this))
     .then(updateRepo)
     .then(updateBranch)
     .then(() => {
@@ -318,7 +313,7 @@ class Github {
       $('#new-repo-type').val('public');
       showAlert(`Successfully create new repository ${repo}`);
     })
-    .catch((err) => {
+    .catch(err => {
       showAlert('Failed to create new repository.', LEVEL_ERROR);
     });
   }
@@ -351,7 +346,7 @@ class Github {
       .then(resolve)
       .fail(reject);
     })
-    .then((response) => {
+    .then(response => {
       const gist = response.id;
       context.branch = gist;
       Object.assign(context.bindBranch, { [context.id] : gist });
@@ -364,7 +359,7 @@ class Github {
       $('#new-gist-public').val('public');
       showAlert(`Successfully create new gist.`);
     })
-    .catch((err) => {
+    .catch(err => {
       showAlert('Failed to create new gist.', LEVEL_ERROR);
     });
   }
@@ -380,7 +375,7 @@ class Github {
       .then(resolve)
       .fail(reject)  
     })
-    .then((response) => {
+    .then(response => {
       if (response.object) {
         return response.object.sha;
       }
@@ -389,12 +384,12 @@ class Github {
           `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
           { access_token: this.accessToken }
         )
-        .then((response) => {
+        .then(response => {
           return response[0].object.sha;
         })
       }
     })
-    .then((sha) => {
+    .then(sha => {
       const payload = {
         ref: `refs/heads/${branch}`,
         sha: sha
@@ -411,18 +406,18 @@ class Github {
         data: JSON.stringify(payload)
       });
     })
-    .then((response) => {
+    .then(response => {
       context.branch = branch;
       Object.assign(context.bindBranch, { [context.id] : branch });
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
-      return context.repo.name;
+      return context.repo.fullName;
     })
     .then(updateBranch)
     .then(() => {
       $('#new-branch-name').val('');
       showAlert(`Successfully create new branch: ${branch}`);
     })
-    .catch((err) => {
+    .catch(err => {
       if (err.status === 409) {
         showAlert('Cannot create branch in empty repository with API, try to create branch in Github.', LEVEL_ERROR);
       } else {
