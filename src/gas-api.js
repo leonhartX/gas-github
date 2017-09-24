@@ -144,7 +144,7 @@ class Gas {
       .fail((err) => {reject(new Error('Create file failed'))})
     })
     .then((response) => {
-      if (!response.startsWith('//OK')) reject(new Error(`Create file '${file}.${type}' failed`));
+      if (!response.startsWith('//OK')) throw(new Error(`Create file '${file}.${type}' failed`));
       const responseData = eval(response.slice(4)).filter((e) => {
         return typeof(e) === 'object';
       })[0];
