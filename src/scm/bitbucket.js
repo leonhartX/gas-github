@@ -248,10 +248,7 @@ class Bitbucket {
       );
     })
     .then(res => {
-      return res.target.hash;
-    })
-    .then(parent => {
-      return this.commitFiles(context.repo.fullName, branch, parent, [], null, `create new branch ${branch}`);
+      return this.commitFiles(context.repo.fullName, branch, res.target.hash, [], null, `create new branch ${branch}`);
     })
     .then(() => {
       context.branch = branch;
