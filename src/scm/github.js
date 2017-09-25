@@ -288,14 +288,15 @@ class Github {
   }
 
   getNamespaces() {
-    return new Promise((resolve, reject) => {
-      $.getJSON(
-        `${this.baseUrl}/user/orgs`,
-        { access_token: this.accessToken }
-      )
-      .then(resolve)
-      .fail(reject);
-    }) 
+    return getAllItems(Promise.resolve(
+      {
+        token: this.accessToken,
+        items: [], 
+        url: `${this.baseUrl}/user/orgs?access_token=${this.accessToken}`
+      }),
+      this.followPaginate,
+      'github'
+    )
     .then(orgs => {
       this.namespaces = [this.user].concat(orgs.map(org => org.login));
       return this.namespaces;

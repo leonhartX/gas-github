@@ -94,13 +94,15 @@ class Bitbucket {
   getAllBranches() {
     return this.getAccessToken()
     .then(accessToken => {
-      return getAllItems(Promise.resolve({
-        token: accessToken,
-        items: [], 
-        url: `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches?access_token=${accessToken}`
-      }),
-      this.followPaginate,
-      'bitbucket');
+      return getAllItems(Promise.resolve(
+        {
+          token: accessToken,
+          items: [], 
+          url: `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches?access_token=${accessToken}`
+        }),
+        this.followPaginate,
+        'bitbucket'
+      );
     });
   }
 
@@ -113,14 +115,16 @@ class Bitbucket {
       )
     })
     .then(response => {
-      return getAllItems(Promise.resolve({
-        token: this.accessToken,
-        items: [], 
-        urls: [],
-        url: `${this.baseUrl}/repositories/${context.repo.fullName}/src/${response.target.hash}/?access_token=${this.accessToken}`
-      }),
-      this.followDirectory,
-      'bitbucket')
+      return getAllItems(Promise.resolve(
+        {
+          token: this.accessToken,
+          items: [], 
+          urls: [],
+          url: `${this.baseUrl}/repositories/${context.repo.fullName}/src/${response.target.hash}/?access_token=${this.accessToken}`
+        }),
+        this.followDirectory,
+        'bitbucket'
+      )
       .then(response => {
         const promises = response.map(src => {
           return new Promise((resolve, reject) => {
@@ -139,17 +143,19 @@ class Bitbucket {
   getNamespaces() {
     return this.getAccessToken()
     .then(accessToken => {
-      return getAllItems(Promise.resolve({
-        token: accessToken,
-        items: [], 
-        url: `${this.baseUrl}/teams?access_token=${accessToken}&role=contributor`
-      }),
-      this.followPaginate,
-      'bitbucket')
-      .then(teams => {
-        this.namespaces = [this.user].concat(teams.map(team => team.username));
-        return this.namespaces;
-      })
+      return getAllItems(Promise.resolve(
+        {
+          token: accessToken,
+          items: [], 
+          url: `${this.baseUrl}/teams?access_token=${accessToken}&role=contributor`
+        }),
+        this.followPaginate,
+        'bitbucket'
+      );
+    })
+    .then(teams => {
+      this.namespaces = [this.user].concat(teams.map(team => team.username));
+      return this.namespaces;
     })
     .catch((err) => {
       showAlert('Failed to get user info.', LEVEL_ERROR);
@@ -159,13 +165,15 @@ class Bitbucket {
   getRepos() {
     return this.getAccessToken()
     .then(accessToken => {
-      return getAllItems(Promise.resolve({
-        token: accessToken,
-        items: [], 
-        url: `${this.baseUrl}/repositories/?access_token=${accessToken}&q=scm="git"&role=contributor`
-      }),
-      this.followPaginate,
-      'bitbucket');
+      return getAllItems(Promise.resolve(
+        {
+          token: accessToken,
+          items: [], 
+          url: `${this.baseUrl}/repositories/?access_token=${accessToken}&q=scm="git"&role=contributor`
+        }),
+        this.followPaginate,
+        'bitbucket'
+      );
     })
     .then(response => {
       const repos = response.map(repo => repo.full_name);
