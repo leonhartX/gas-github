@@ -54,6 +54,16 @@ function initContext() {
     });
   })
   .then(scm => {
+    return scm.getNamespaces()
+    .then((owners) => {
+      owners.forEach((owner) => {
+        let content = `<option value="${owner}">${owner}</option>`
+        $('#new-repo-owner').append(content);
+      });
+      return scm;
+    })
+  })
+  .then(scm => {
     return scm.getRepos();
   })
 }
@@ -147,7 +157,11 @@ function initPageEvent() {
 
     $(document).on('click', `#scm-create-${type}`, () => {
       changeModalState(type, false);
-      scm[`create${type.capitalize()}`]();
+      scm[`create${type.capitalize()}`]()
+      .then(window[`handle${type.capitalize()}Created`])
+      .catch(err => {
+        showAlert(err.message, LEVEL_ERROR);
+      })
     });
 
     $(document).on('input propertychange', `#new-${type}-name`, (event) => {
@@ -397,6 +411,44 @@ function updateBranch() {
     Object.assign(context.bindBranch, { [context.id] : branch });
     chrome.storage.sync.set({ bindBranch: context.bindBranch });
     return branch;
+  });
+}
+
+function handleRepoCreated(repo) {
+  return scm.getRepos()
+  .then(updateRepo)
+  .then(updateBranch)
+  .then(() => {
+    $('#new-repo-name').val('');
+    $('#new-repo-desc').val('');
+    $('#new-repo-type').val('public');
+    showAlert(`Successfully create new repository ${repo}`);
+  })
+  .catch(() => {
+    throw new Error('Repository created, but failed to show the new repository.');
+  });
+}
+
+function handleBranchCreated(branch) {
+  return updateBranch()
+  .then(() => {
+    $('#new-branch-name').val('');
+    showAlert(`Successfully create new branch: ${branch}`);
+  })
+  .catch(() => {
+    throw new Error('Branch created, but failed to show the new branch.');
+  });
+}
+
+function handleGistCreated() {
+  return updateGist()
+  .then(() => {
+    $('#new-gist-name').val('');
+    $('#new-gist-public').val('public');
+    showAlert(`Successfully create new gist.`);
+  })
+  .catch(err => {
+    throw new Error('Gist created, but failed to show the new gist.');
   });
 }
 

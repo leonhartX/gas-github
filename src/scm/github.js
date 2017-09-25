@@ -5,6 +5,7 @@ class Github {
     this.baseUrl = baseUrl;
     this.user = user;
     this.accessToken = accessToken;
+    this.namespaces = [user];
   }
 
   get name() {
@@ -286,7 +287,26 @@ class Github {
     });
   }
 
+  getNamespaces() {
+    return new Promise((resolve, reject) => {
+      $.getJSON(
+        `${this.baseUrl}/user/orgs`,
+        { access_token: this.accessToken }
+      )
+      .then(resolve)
+      .fail(reject);
+    }) 
+    .then(orgs => {
+      this.namespaces = [this.user].concat(orgs.map(org => org.login));
+      return this.namespaces;
+    })
+    .catch((err) => {
+      showAlert('Failed to get user info.', LEVEL_ERROR);
+    });
+  }
+
   createRepo() {
+    const owner = $('#new-repo-owner').val();
     const repo = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
     const isPrivate = $('#new-repo-type').val() !== 'public';
@@ -296,10 +316,11 @@ class Github {
       auto_init : true,
       private: isPrivate
     }
+    const path = owner === this.user ? '/user/repos' : `/orgs/${owner}/repos`;
     if (!repo || repo === '') return;
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       $.ajax({
-        url: `${this.baseUrl}/user/repos`,
+        url: `${this.baseUrl}${path}`,
         headers: {
           'Authorization': `token ${this.accessToken}`
         },
@@ -322,19 +343,10 @@ class Github {
         delete context.bindBranch[context.id];
       }
       chrome.storage.sync.set({ bindRepo: context.bindRepo });
-      return response;
-    })
-    .then(this.getRepos.bind(this))
-    .then(updateRepo)
-    .then(updateBranch)
-    .then(() => {
-      $('#new-repo-name').val('');
-      $('#new-repo-desc').val('');
-      $('#new-repo-type').val('public');
-      showAlert(`Successfully create new repository ${repo}`);
+      return response.full_name;
     })
     .catch(err => {
-      showAlert('Failed to create new repository.', LEVEL_ERROR);
+      throw new Error('Failed to create new repository.');
     });
   }
 
@@ -351,7 +363,7 @@ class Github {
       }
     };
 
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       $.ajax({
         url: `${this.baseUrl}/gists`,
         headers: {
@@ -373,23 +385,17 @@ class Github {
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
       return response;
     })
-    .then(updateGist)
-    .then(() => {
-      $('#new-gist-name').val('');
-      $('#new-gist-public').val('public');
-      showAlert(`Successfully create new gist.`);
-    })
     .catch(err => {
-      showAlert('Failed to create new gist.', LEVEL_ERROR);
+      throw new Error('Failed to create new gist.');
     });
   }
 
   createBranch() {
     const branch = $('#new-branch-name').val();
     if (!branch || branch === '') return;
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       $.getJSON(
-        `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
+        `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
         { access_token: this.accessToken }
       )
       .then(resolve)
@@ -430,18 +436,13 @@ class Github {
       context.branch = branch;
       Object.assign(context.bindBranch, { [context.id] : branch });
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
-      return context.repo.fullName;
-    })
-    .then(updateBranch)
-    .then(() => {
-      $('#new-branch-name').val('');
-      showAlert(`Successfully create new branch: ${branch}`);
+      return branch;
     })
     .catch(err => {
       if (err.status === 409) {
-        showAlert('Cannot create branch in empty repository with API, try to create branch in Github.', LEVEL_ERROR);
+        throw new Error('Cannot create branch in empty repository with API, try to create branch in Github.');
       } else {
-        showAlert('Failed to create new branch.', LEVEL_ERROR);
+        throw new Error('Failed to create new branch.');
       }
     });
   }
