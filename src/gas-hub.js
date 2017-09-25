@@ -401,7 +401,11 @@ function updateBranch() {
     let branch = context.bindBranch[context.id];
     if (branches.length === 0) {
       branch = '';
-      showAlert('This repository is empty, try to create a new branch such as [master] in Github or Bitbucket', LEVEL_WARN);
+      if (scm.name === 'github') {
+        showAlert('This repository is empty, try to create a new branch such as [master] in Github', LEVEL_WARN);
+      } else {
+        showAlert('This repository is empty, first create a new branch', LEVEL_WARN); 
+      }
     } else if ($.inArray(branch, branches.map(branch => branch.name)) < 0) {
       branch = ($.inArray("master", branches.map(branch => branch.name)) >= 0) ? 'master' : branches[0].name;
     }
