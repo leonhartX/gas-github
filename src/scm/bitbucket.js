@@ -6,6 +6,7 @@ class Bitbucket {
     this.user = user;
     this.token = token;
     this.accessToken = null;
+    this.namespaces = [user];
   }
 
   get name() {
@@ -135,6 +136,26 @@ class Bitbucket {
     });
   }
 
+  getNamespaces() {
+    return this.getAccessToken()
+    .then(accessToken => {
+      return getAllItems(Promise.resolve({
+        token: accessToken,
+        items: [], 
+        url: `${this.baseUrl}/teams?access_token=${accessToken}&role=contributor`
+      }),
+      this.followPaginate,
+      'bitbucket')
+      .then(teams => {
+        this.namespaces = [this.user].concat(teams.map(team => team.username));
+        return this.namespaces;
+      })
+    })
+    .catch((err) => {
+      showAlert('Failed to get user info.', LEVEL_ERROR);
+    });
+  }
+
   getRepos() {
     return this.getAccessToken()
     .then(accessToken => {
@@ -158,7 +179,8 @@ class Bitbucket {
   }
 
   createRepo() {
-    const repo = $('#new-repo-name').val();
+    const owner = $('#new-repo-owner').val();
+    const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
     const isPrivate = $('#new-repo-type').val() !== 'public';
     const payload = {
@@ -166,11 +188,11 @@ class Bitbucket {
       description : desc,
       is_private: isPrivate
     }
-    if (!repo || repo === '') return;
-    this.getAccessToken()
+    if (!name || name === '') return;
+    return this.getAccessToken()
     .then(() => {
       return $.ajax({
-        url: `${this.baseUrl}/repositories/${this.user}/${repo}`,
+        url: `${this.baseUrl}/repositories/${owner}/${name}`,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         },
@@ -181,7 +203,7 @@ class Bitbucket {
         data: JSON.stringify(payload)
       })
     })
-    .then((response) => {
+    .then(response => {
       const repo = {
         fullName : response.full_name
       };
@@ -194,19 +216,13 @@ class Bitbucket {
       return response.full_name;
     })
     .then(repo => {
-      return this.commitFiles(repo, 'master', [{name: "README.md", content: "initialed by gas-github"}], null, 'initial commit');
-    })
-    .then(this.getRepos.bind(this))
-    .then(updateRepo)
-    .then(updateBranch)
-    .then(() => {
-      $('#new-repo-name').val('');
-      $('#new-repo-desc').val('');
-      $('#new-repo-type').val('public');
-      showAlert(`Successfully create new repository ${repo}`);
+      return this.commitFiles(repo, 'master', [{name: "README.md", content: "initialed by gas-github"}], null, 'initial commit')
+      .then(() => {
+        return repo;
+      });
     })
     .catch((err) => {
-      showAlert('Failed to create new repository.', LEVEL_ERROR);
+      throw new Error('Failed to create new repository.');
     });
   }
 
@@ -214,7 +230,7 @@ class Bitbucket {
     const branch = $('#new-branch-name').val();
     if (!branch || branch === '') return;
     context.branch = branch;
-    this.getAccessToken()
+    return this.getAccessToken()
     .then(() => {
       return this.commitFiles(context.repo.fullName, branch, [], null, `create new branch ${branch}`);
     })
@@ -223,15 +239,9 @@ class Bitbucket {
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
       return branch;
     })
-    .then(updateBranch)
-    .then(() => {
-      $('#new-branch-name').val('');
-      showAlert(`Successfully create new branch: ${branch}`);
-    })
     .catch(err => {
-      showAlert('Failed to create new branch.', LEVEL_ERROR);
+      throw new Error('Failed to create new branch.');
     });
-    
   }
 
   followPaginate(data) {

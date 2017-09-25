@@ -307,17 +307,17 @@ class Github {
 
   createRepo() {
     const owner = $('#new-repo-owner').val();
-    const repo = $('#new-repo-name').val();
+    const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
     const isPrivate = $('#new-repo-type').val() !== 'public';
     const payload = {
-      name : repo,
+      name : name,
       description : desc,
       auto_init : true,
       private: isPrivate
     }
     const path = owner === this.user ? '/user/repos' : `/orgs/${owner}/repos`;
-    if (!repo || repo === '') return;
+    if (!name || name === '') return;
     return new Promise((resolve, reject) => {
       $.ajax({
         url: `${this.baseUrl}${path}`,
