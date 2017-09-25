@@ -45,7 +45,7 @@ class Bitbucket {
     })
   }
 
-  commitFiles(repo, branch, files, deleteFiles, comment) {
+  commitFiles(repo, branch, parent, files, deleteFiles, comment) {
     return new Promise((resolve, reject) => {
       let data = files.reduce((hash, f) => {
         hash[f.name] = f.content;
@@ -57,6 +57,9 @@ class Bitbucket {
       }
       if (branch) {
         data.branch = branch;
+      }
+      if (parent) {
+        data.parents = parent;
       }
       $.ajax({
         url: `${this.baseUrl}/repositories/${repo}/src`,
@@ -82,7 +85,7 @@ class Bitbucket {
     const deleteFiles = changed.filter(f => !code.gas[f]);
     const comment = $('#commit-comment').val();
 
-    this.commitFiles(context.repo.fullName, context.branch, files, deleteFiles, comment)
+    this.commitFiles(context.repo.fullName, context.branch, null, files, deleteFiles, comment)
     .then(() => {
       showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
     })
@@ -224,7 +227,7 @@ class Bitbucket {
       return response.full_name;
     })
     .then(repo => {
-      return this.commitFiles(repo, 'master', [{name: "README.md", content: "initialed by gas-github"}], null, 'initial commit')
+      return this.commitFiles(repo, 'master', null, [{name: "README.md", content: "initialed by gas-github"}], null, 'initial commit')
       .then(() => {
         return repo;
       });
@@ -237,12 +240,21 @@ class Bitbucket {
   createBranch() {
     const branch = $('#new-branch-name').val();
     if (!branch || branch === '') return;
-    context.branch = branch;
     return this.getAccessToken()
     .then(() => {
-      return this.commitFiles(context.repo.fullName, branch, [], null, `create new branch ${branch}`);
+      return $.getJSON(
+        `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`,
+        { access_token: this.accessToken }
+      );
+    })
+    .then(res => {
+      return res.target.hash;
+    })
+    .then(parent => {
+      return this.commitFiles(context.repo.fullName, branch, parent, [], null, `create new branch ${branch}`);
     })
     .then(() => {
+      context.branch = branch;
       Object.assign(context.bindBranch, { [context.id] : branch });
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
       return branch;
