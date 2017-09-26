@@ -28,6 +28,7 @@ $(() => {
       case 'nothing' :
         break;
       case 'need relogin':
+        initLoginContent();
         showAlert('Extension has been updated, please relogin', LEVEL_WARN);
         break;
       default:
