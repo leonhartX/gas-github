@@ -27,6 +27,9 @@ $(() => {
         break;
       case 'nothing' :
         break;
+      case 'need relogin':
+        showAlert('Extension has been updated, please relogin', LEVEL_WARN);
+        break;
       default:
         showAlert('Unknow Error', LEVEL_ERROR);
         break;
@@ -43,6 +46,9 @@ function initContext() {
 
   return new Promise((resolve, reject) => {
     chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch'], (item) => {
+      if (!item.scm) {
+        reject(new Error('need relogin'));
+      }
       if (!item.token) {
         reject(new Error('need login'));
       }
