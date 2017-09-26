@@ -5,6 +5,15 @@ class Github {
     this.baseUrl = baseUrl;
     this.user = user;
     this.accessToken = accessToken;
+    this.namespaces = [user];
+  }
+
+  get name() {
+    return 'github';
+  }
+
+  get canUseGist() {
+    return true;
   }
 
   push(code){
@@ -150,7 +159,7 @@ class Github {
         content: code.gas[file]
       };
     });
-    if (code.github['init_by_gas_hub.html']) {
+    if (code.scm['init_by_gas_hub.html']) {
       payload.files['init_by_gas_hub.html'] = null;
     }
     if ($('#gist-desc').val() !== '') {
@@ -176,11 +185,19 @@ class Github {
   }
 
   getAllGists() {
-    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}` }), 'github');
+    return getAllItems(
+      Promise.resolve({ items: [], url: `${this.baseUrl}/users/${this.user}/gists?access_token=${this.accessToken}` }),
+      this.followPaginate,
+      'github'
+    );
   }
 
   getAllBranches() {
-    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}` }), 'github');
+    return getAllItems(
+      Promise.resolve({ items: [], url: `${this.baseUrl}/repos/${context.repo.fullName}/branches?access_token=${this.accessToken}` }),
+      this.followPaginate,
+      'github'
+    );
   }
 
   getCode() {
@@ -249,7 +266,11 @@ class Github {
   }
 
   getRepos() {
-    return getAllItems(Promise.resolve({ items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}` }), 'github')
+    return getAllItems(
+      Promise.resolve({ items: [], url: `${this.baseUrl}/user/repos?access_token=${this.accessToken}` }),
+      this.followPaginate,  
+      'github'
+    )
     .then(response => {
       const repos = response.map(repo => repo.full_name);
       //if current bind still existed, use it
@@ -266,20 +287,41 @@ class Github {
     });
   }
 
+  getNamespaces() {
+    return getAllItems(Promise.resolve(
+      {
+        token: this.accessToken,
+        items: [], 
+        url: `${this.baseUrl}/user/orgs?access_token=${this.accessToken}`
+      }),
+      this.followPaginate,
+      'github'
+    )
+    .then(orgs => {
+      this.namespaces = [this.user].concat(orgs.map(org => org.login));
+      return this.namespaces;
+    })
+    .catch((err) => {
+      showAlert('Failed to get user info.', LEVEL_ERROR);
+    });
+  }
+
   createRepo() {
-    const repo = $('#new-repo-name').val();
+    const owner = $('#new-repo-owner').val();
+    const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
     const isPrivate = $('#new-repo-type').val() !== 'public';
     const payload = {
-      name : repo,
+      name : name,
       description : desc,
       auto_init : true,
       private: isPrivate
     }
-    if (!repo || repo === '') return;
-    new Promise((resolve, reject) => {
+    const path = owner === this.user ? '/user/repos' : `/orgs/${owner}/repos`;
+    if (!name || name === '') return;
+    return new Promise((resolve, reject) => {
       $.ajax({
-        url: `${this.baseUrl}/user/repos`,
+        url: `${this.baseUrl}${path}`,
         headers: {
           'Authorization': `token ${this.accessToken}`
         },
@@ -302,19 +344,10 @@ class Github {
         delete context.bindBranch[context.id];
       }
       chrome.storage.sync.set({ bindRepo: context.bindRepo });
-      return response;
-    })
-    .then(this.getRepos.bind(this))
-    .then(updateRepo)
-    .then(updateBranch)
-    .then(() => {
-      $('#new-repo-name').val('');
-      $('#new-repo-desc').val('');
-      $('#new-repo-type').val('public');
-      showAlert(`Successfully create new repository ${repo}`);
+      return response.full_name;
     })
     .catch(err => {
-      showAlert('Failed to create new repository.', LEVEL_ERROR);
+      throw new Error('Failed to create new repository.');
     });
   }
 
@@ -331,7 +364,7 @@ class Github {
       }
     };
 
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       $.ajax({
         url: `${this.baseUrl}/gists`,
         headers: {
@@ -353,23 +386,17 @@ class Github {
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
       return response;
     })
-    .then(updateGist)
-    .then(() => {
-      $('#new-gist-name').val('');
-      $('#new-gist-public').val('public');
-      showAlert(`Successfully create new gist.`);
-    })
     .catch(err => {
-      showAlert('Failed to create new gist.', LEVEL_ERROR);
+      throw new Error('Failed to create new gist.');
     });
   }
 
   createBranch() {
     const branch = $('#new-branch-name').val();
     if (!branch || branch === '') return;
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       $.getJSON(
-        `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/master`,
+        `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
         { access_token: this.accessToken }
       )
       .then(resolve)
@@ -410,19 +437,31 @@ class Github {
       context.branch = branch;
       Object.assign(context.bindBranch, { [context.id] : branch });
       chrome.storage.sync.set({ bindBranch: context.bindBranch });
-      return context.repo.fullName;
-    })
-    .then(updateBranch)
-    .then(() => {
-      $('#new-branch-name').val('');
-      showAlert(`Successfully create new branch: ${branch}`);
+      return branch;
     })
     .catch(err => {
       if (err.status === 409) {
-        showAlert('Cannot create branch in empty repository with API, try to create branch in Github.', LEVEL_ERROR);
+        throw new Error('Cannot create branch in empty repository with API, try to create branch in Github.');
       } else {
-        showAlert('Failed to create new branch.', LEVEL_ERROR);
+        throw new Error('Failed to create new branch.');
       }
+    });
+  }
+  
+  followPaginate(data) {
+    return new Promise((resolve, reject) => {
+      $.getJSON(data.url)
+      .then((response, status, xhr) => {
+        data.items = data.items.concat(response);
+        const link = xhr.getResponseHeader('Link');
+        let url = null;
+        if (link) {
+          const match = link.match(/<(.*?)>; rel="next"/);
+          url = match && match[1] ? match[1] : null;
+        }
+        resolve({ items: data.items, url: url });
+      })
+      .fail(reject);
     });
   }
 }

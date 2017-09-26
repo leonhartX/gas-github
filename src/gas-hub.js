@@ -54,6 +54,16 @@ function initContext() {
     });
   })
   .then(scm => {
+    return scm.getNamespaces()
+    .then((owners) => {
+      owners.forEach((owner) => {
+        let content = `<option value="${owner}">${owner}</option>`
+        $('#new-repo-owner').append(content);
+      });
+      return scm;
+    })
+  })
+  .then(scm => {
     return scm.getRepos();
   })
 }
@@ -147,7 +157,11 @@ function initPageEvent() {
 
     $(document).on('click', `#scm-create-${type}`, () => {
       changeModalState(type, false);
-      scm[`create${type.capitalize()}`]();
+      scm[`create${type.capitalize()}`]()
+      .then(window[`handle${type.capitalize()}Created`])
+      .catch(err => {
+        showAlert(err.message, LEVEL_ERROR);
+      })
     });
 
     $(document).on('input propertychange', `#new-${type}-name`, (event) => {
@@ -241,7 +255,7 @@ function prepareCode() {
         if (elem) hash[files[elem.file]] = elem.content;
         return hash;
       }, {}),
-      github: data[1].reduce((hash, elem) => {
+      scm: data[1].reduce((hash, elem) => {
         if (elem) hash[elem.file] = elem.content;
         return hash;
       }, {})
@@ -251,16 +265,16 @@ function prepareCode() {
 }
 
 function showDiff(code, type) {
-  if (Object.keys(code.github).length === 0 && type === 'pull') {
+  if (Object.keys(code.scm).length === 0 && type === 'pull') {
     showAlert('There is nothing to pull', LEVEL_WARN);
     return;
   }
   //setting the diff model
-  const oldCode = type === 'push' ? code.github : code.gas;
-  const newCode = type === 'push' ? code.gas : code.github;
+  const oldCode = type === 'push' ? code.scm : code.gas;
+  const newCode = type === 'push' ? code.gas : code.scm;
   const gasFiles = Object.keys(code.gas);
-  const githubFiles = Object.keys(code.github);
-  let diff = githubFiles.filter((e) => {
+  const scmFiles = Object.keys(code.scm);
+  let diff = scmFiles.filter((e) => {
     return gasFiles.indexOf(e) < 0;
   })
   .concat(gasFiles)
@@ -333,8 +347,10 @@ function showDiff(code, type) {
 
 function updateRepo(repos) {
   $('.repo-menu').empty().append('<div class="scm-new-repo scm-item goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
-  $('.repo-menu').append('<div class="scm-use-gist scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="gist">gist</div></div>');
-
+  if (scm.canUseGist) {
+    $('.repo-menu').append('<div class="scm-use-gist scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="gist">gist</div></div>');
+  }
+  
   repos.forEach((repo) => {
     let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="${repo}">${repo}</div></div>`
     $('.repo-menu').append(content);
@@ -385,7 +401,11 @@ function updateBranch() {
     let branch = context.bindBranch[context.id];
     if (branches.length === 0) {
       branch = '';
-      showAlert('This repository is empty, try to create a new branch such as [master] in Github.', LEVEL_WARN);
+      if (scm.name === 'github') {
+        showAlert('This repository is empty, try to create a new branch such as [master] in Github', LEVEL_WARN);
+      } else {
+        showAlert('This repository is empty, first create a new branch', LEVEL_WARN); 
+      }
     } else if ($.inArray(branch, branches.map(branch => branch.name)) < 0) {
       branch = ($.inArray("master", branches.map(branch => branch.name)) >= 0) ? 'master' : branches[0].name;
     }
@@ -395,6 +415,44 @@ function updateBranch() {
     Object.assign(context.bindBranch, { [context.id] : branch });
     chrome.storage.sync.set({ bindBranch: context.bindBranch });
     return branch;
+  });
+}
+
+function handleRepoCreated(repo) {
+  return scm.getRepos()
+  .then(updateRepo)
+  .then(updateBranch)
+  .then(() => {
+    $('#new-repo-name').val('');
+    $('#new-repo-desc').val('');
+    $('#new-repo-type').val('public');
+    showAlert(`Successfully create new repository ${repo}`);
+  })
+  .catch(() => {
+    throw new Error('Repository created, but failed to show the new repository.');
+  });
+}
+
+function handleBranchCreated(branch) {
+  return updateBranch()
+  .then(() => {
+    $('#new-branch-name').val('');
+    showAlert(`Successfully create new branch: ${branch}`);
+  })
+  .catch(() => {
+    throw new Error('Branch created, but failed to show the new branch.');
+  });
+}
+
+function handleGistCreated() {
+  return updateGist()
+  .then(() => {
+    $('#new-gist-name').val('');
+    $('#new-gist-public').val('public');
+    showAlert(`Successfully create new gist.`);
+  })
+  .catch(err => {
+    throw new Error('Gist created, but failed to show the new gist.');
   });
 }
 

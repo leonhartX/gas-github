@@ -90,14 +90,12 @@ function getGHEParam() {
 
 function getBitbucketParam() {
   const scm = 'bitbucket';
-  const username = $('#bitbucket-username').val();
-  const email = $('#bitbucket-email').val();
+  const username = $('#bitbucket-email').val();
   const password = $('#bitbucket-password').val();
   const baseUrl = `https://api.bitbucket.org/2.0`;
   return {
     scm,
     username,
-    email,
     password,
     baseUrl
   }
@@ -111,8 +109,8 @@ function addCred(param) {
     return;
   }
 
-  if (param.scm == 'bitbucket') return loginBitbucket(param);
-  if (param.password !== '' && param.scm == 'github') return loginGithub(param);
+  if (param.scm === 'bitbucket') return loginBitbucket(param);
+  if (param.password !== '' && param.scm === 'github') return loginGithub(param);
 
   addStar(param.token)
   .then(() => {
@@ -179,7 +177,6 @@ function loginGithub(param) {
 
 function loginBitbucket(param) {
   const username = param.username;
-  const email = param.email;
   const password = param.password;
   const baseUrl = param.baseUrl;
   const headers = {
@@ -193,18 +190,24 @@ function loginBitbucket(param) {
     contentType: 'application/x-www-form-urlencoded',
     data: {
       grant_type: 'password',
-      username: email,
+      username: username,
       password: password
     }
   })
-  .done((response) => {
-    chrome.storage.sync.set({scm: param.scm, user: username, token: response.refresh_token, baseUrl: baseUrl}, () => {
-      location.reload();
-    });
-    chrome.storage.local.get('tab', (item) => {
-      if(item.tab) {
-        chrome.tabs.reload(item.tab);
-      }
+  .done(response => {
+    return $.getJSON(
+      `${baseUrl}/user`,
+      { access_token: response.access_token }
+    )
+    .done(user => {
+      chrome.storage.sync.set({scm: param.scm, user: user.username, token: response.refresh_token, baseUrl: baseUrl}, () => {
+        location.reload();
+      });
+      chrome.storage.local.get('tab', (item) => {
+        if(item.tab) {
+          chrome.tabs.reload(item.tab);
+        }
+      });
     });
   })
   .fail(() => {

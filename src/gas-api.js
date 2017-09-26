@@ -3,7 +3,7 @@
 class Gas {
   pull(code) {
     const changed = $('.diff-file:checked').toArray().map(e => e.value);
-    const updatePromises = changed.filter(f => code.github[f])
+    const updatePromises = changed.filter(f => code.scm[f])
     .map((file) => {
       const match = file.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) {
@@ -16,15 +16,15 @@ class Gas {
       if (!code.gas[file]) {
         return () => this.gasCreateFile(name, type)
         .then(() => {
-          return this.gasUpdateFile(name, code.github[file]);
+          return this.gasUpdateFile(name, code.scm[file]);
         })
       } else {
-        return () => this.gasUpdateFile(name, code.github[file]);
+        return () => this.gasUpdateFile(name, code.scm[file]);
       }
     })
     .filter(n => n != undefined);
 
-    const deletePromises = changed.filter(f => !code.github[f])
+    const deletePromises = changed.filter(f => !code.scm[f])
     .map((file) => {
       const match = file.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) {
@@ -48,7 +48,7 @@ class Gas {
       })
     })
     .then(() => {
-      showAlert('Successfully pulled from github');
+      showAlert('Successfully pulled from scm');
       location.reload();
     })
     .catch((err) => {
@@ -144,7 +144,7 @@ class Gas {
       .fail((err) => {reject(new Error('Create file failed'))})
     })
     .then((response) => {
-      if (!response.startsWith('//OK')) reject(new Error(`Create file '${file}.${type}' failed`));
+      if (!response.startsWith('//OK')) throw(new Error(`Create file '${file}.${type}' failed`));
       const responseData = eval(response.slice(4)).filter((e) => {
         return typeof(e) === 'object';
       })[0];
