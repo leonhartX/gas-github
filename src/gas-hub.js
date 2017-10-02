@@ -47,11 +47,11 @@ function initContext() {
 
   return new Promise((resolve, reject) => {
     chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch'], (item) => {
-      if (!item.scm) {
-        reject(new Error('need relogin'));
-      }
       if (!item.token) {
         reject(new Error('need login'));
+      }
+      if (!item.scm) {
+        reject(new Error('need relogin'));
       }
       scm = createSCM(item);
       context.bindRepo = item.bindRepo || {};
@@ -87,6 +87,9 @@ function initPageContent() {
     $('body').children().last().after(content[2]);
   })
   .then(() => {
+    $(document).on('click', '.scm-alert-dismiss', () => {
+      $('.scm-alert').remove();
+    });
     chrome.runtime.sendMessage({ cmd: 'tab' });
   });
 }
@@ -241,10 +244,6 @@ function initPageEvent() {
         $('#scm-bind-branch').text(`${context.gist ? 'Gist' : 'Branch'}: ${label}`);
       }
     });
-  });
-
-  $(document).on('click', '.scm-alert-dismiss', () => {
-    $('.scm-alert').remove();
   });
 }
 
