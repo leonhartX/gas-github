@@ -1,26 +1,26 @@
 "use strict";
 
 $(() => {
-  $('.message a').click(function(e){
+  $('.message a').click(e => {
     $('.error').hide();
     $('.login-container').animate({height: 'hide', opacity: 'hide'}, 'slow');
     $(`.${e.target.name}-login-container`).animate({height: 'show', opacity: 'show'}, 'slow');
   });
-  $('#login').click((e) => {
+  $('#login').click(e => {
     addCred(getGithubParam());
   });
-  $('#ghe-login').click((e) => {
+  $('#ghe-login').click(e => {
     addCred(getGHEParam());
   });
-  $('#bitbucket-login').click((e) => {
+  $('#bitbucket-login').click(e => {
     addCred(getBitbucketParam());
   });
-  $('#logout').click((e) => {
+  $('#logout').click(e => {
     logout();
   });
 
   checkToken()
-  .then((item) => {
+  .then(item => {
     $('.login-container').hide();
     $('.logout-container').show();
     let user = item.user, domain, userLink, tokenLink;
@@ -49,7 +49,7 @@ $(() => {
     $('#login-user').text(`${user}${domain}`).attr('href', userLink);
     $('#token').attr('href', tokenLink);
   })
-  .catch((err) => {
+  .catch(err => {
     //not logged in
   })
 })
@@ -151,10 +151,16 @@ function loginGithub(param) {
     contentType: 'application/json',
     data: JSON.stringify(payload)
   })
-  .done((response) => {
+  .done(response => {
     addStar(response.token)
     .then(() => {
-      chrome.storage.sync.set({scm: param.scm, user: username, token: response.token, baseUrl: baseUrl}, () => {
+      return $.getJSON(
+        `${baseUrl}/user`,
+        { access_token: response.token }
+      )
+    }) 
+    .then(userinfo => {
+      chrome.storage.sync.set({scm: param.scm, user: userinfo.login, token: response.token, baseUrl: baseUrl}, () => {
         location.reload();
       });
       chrome.storage.local.get('tab', (item) => {
@@ -164,7 +170,7 @@ function loginGithub(param) {
       });
     })
   })
-  .fail((err) => {
+  .fail(err => {
     if (err.status == 401 && 
         err.getResponseHeader('X-GitHub-OTP') !== null && 
         $('.login-item-otp').filter(':visible').length == 0) {
