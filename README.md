@@ -66,17 +66,17 @@ but you will need to delete the token or revoke Bitbucket's oauth yourself from 
 
 # 3.Features
 
- - Support Github, Github Enterprise and Bitbucket
- - Support Push/Pull code between SCM and GAS
- - Support sync code to public/secret Gist
+ - Manage code with Github, Github Enterprise and Bitbucket
  - Support embedded script
- - Support create repo, branch from GAS IDE
- - Support diff check when pull/push
- - Support choose files to pull/push
+ - Push/Pull code between SCM and GAS
+ - Sync code to public/secret Gist
+ - Create repo, branch from GAS IDE
+ - Diff check when pull/push
+ - Choose files to pull/push
  - Support file changed/added/deleted/renamed
- - Support commit comment when push
- - Support two-factor authentication
- - Support directory(with slash in filename)
+ - Add Commit comment when push
+ - Support two-factor authentication(Github, Github Enterprise only)
+ - Work with directory(with slash in filename)
  - Support Github Organization and Bitbucket Team.
  - Google Apps Script native ui
 
