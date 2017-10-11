@@ -46,7 +46,7 @@ function initContext() {
   context.id = match[2];
 
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch'], (item) => {
+    chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch', 'bindType'], (item) => {
       if (!item.token) {
         reject(new Error('need login'));
       }
@@ -56,6 +56,8 @@ function initContext() {
       scm = createSCM(item);
       context.bindRepo = item.bindRepo || {};
       context.bindBranch = item.bindBranch || {};
+      context.bindType = item.bindType || {};
+      context.filetype = context.bindType[context.id] || '.gs';
       context.gist = context.bindRepo[context.id] && context.bindRepo[context.id].gist;
       resolve(scm);
     });
@@ -179,25 +181,39 @@ function initPageEvent() {
     });
   });
 
-  ['repo', 'branch', 'gist', 'diff'].forEach((type) => {
+  ['repo', 'branch', 'gist', 'diff', 'config'].forEach((type) => {
     $(document).on('click', `.scm-${type}-modal-close`, () => {
       changeModalState(type, false);
     });
   });
 
-  ['pull', 'push'].forEach((type) => {
+  ['pull', 'push', 'config'].forEach((type) => {
     $(document).on('mouseover', `#${type}Button`, () => {
       $(`#${type}Button`).addClass('goog-toolbar-button-hover');
     });
     $(document).on('mouseleave', `#${type}Button`, () => {
       $(`#${type}Button`).removeClass('goog-toolbar-button-hover');
     });
+  });
+
+  ['pull', 'push'].forEach(type => {
     $(document).on('click', `#${type}Button`, () => {
       prepareCode()
       .then((data) => { showDiff(data, type); }) //get more performance over callback
       .catch((err) => { showAlert(err.message, LEVEL_ERROR); });
     });
+  })
+
+  $(document).on('click', '#configButton', () => {
+    $('#filetype').val(context.filetype);
+    changeModalState('config', true);
   });
+
+  $(document).on('change', '#filetype', () => {
+    context.filetype = $('#filetype').val();
+    context.bindType[context.id] = context.filetype;
+    chrome.storage.sync.set({ bindType: context.bindType });
+  })
 
   $(document).on('click', '.scm-item', (event) => {
     let target = $(event.target);
@@ -250,6 +266,7 @@ function initPageEvent() {
 function prepareCode() {
   return Promise.all([gas.getGasCode(), scm.getCode()])
   .then((data) => {
+    const re = new RegExp(`\\${context.filetype}$`);
     const files = $('.item').toArray().reduce((hash, e) => {
       const match = e.innerText.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) return hash;
@@ -262,7 +279,9 @@ function prepareCode() {
         return hash;
       }, {}),
       scm: data[1].reduce((hash, elem) => {
-        if (elem) hash[elem.file] = elem.content;
+        if (elem) {
+          hash[elem.file.replace(re, '.gs')] = elem.content;
+        }
         return hash;
       }, {})
     }
@@ -472,9 +491,10 @@ function getBaseUrl() {
 
 function changeModalState(type, toShow) {
   if (toShow) {
+    const margin = type === 'config' ? 600 : 400;
     const width = $('body').width();
     const height = $('body').height();
-    const left = (width - 600) / 2
+    const left = (width - margin) / 2;
     $(`#${type}Modal`).before(`<div class="scm-modal-bg modal-dialog-bg" style="opacity: 0.5; width: ${width}px; height: ${height}px;" aria-hidden="true"></div>`);
     $(`#${type}Modal`).css('left', left).show();
   } else {

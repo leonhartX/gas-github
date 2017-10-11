@@ -41,7 +41,7 @@ class Github {
         data: JSON.stringify(payload)
       })
       .then(response => {
-        return {file: file, blob: response};
+        return {file: file.replace(/\.gs$/, context.filetype), blob: response};
       })
     });
     if (changed.length === 0) {
@@ -65,6 +65,7 @@ class Github {
         }
       )
       .then(baseTree => {
+        const re = new RegExp(`(\\${context.filetype}|\\.html)$`);
         const tree = responses[0].map((data) => {
           return {
             path: data.file,
@@ -74,7 +75,7 @@ class Github {
           }
         })
         .concat(baseTree.tree.filter((t) =>  {
-          return (t.type != 'tree') && (!/.(gs|html)$/.test(t.path) || unchanged.indexOf(t.path) >= 0);
+          return (t.type != 'tree') && (!re.test(t.path) || unchanged.indexOf(t.path) >= 0);
         }));
         return {
           tree: tree
@@ -155,7 +156,7 @@ class Github {
       files: {}
     };
     files.forEach(file => {
-      payload.files[file] = {
+      payload.files[file.replace(/\.gs$/, context.filetype)] = {
         content: code.gas[file]
       };
     });
@@ -221,8 +222,9 @@ class Github {
       );
     })
     .then(response => {
+      const re = new RegExp(`(\\${context.filetype}|\\.html)$`);
       const promises = response.tree.filter((tree) => {
-        return tree.type === 'blob' && /(\.gs|\.html)$/.test(tree.path);
+        return tree.type === 'blob' && re.test(tree.path);
       })
       .map(tree => {
         return new Promise((resolve, reject) => {
