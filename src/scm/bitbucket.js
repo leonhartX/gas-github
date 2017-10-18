@@ -80,7 +80,7 @@ class Bitbucket {
   push(code){
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
     const files = changed.filter(f => code.gas[f]).map(f => {
-      return { name: f, content: code.gas[f] }
+      return { name: f.replace(/\.gs$/, context.filetype), content: code.gas[f] }
     });
     const deleteFiles = changed.filter(f => !code.gas[f]);
     const comment = $('#commit-comment').val();
@@ -287,8 +287,9 @@ class Bitbucket {
         }).map(dir => {
           return `${dir.links.self.href}?access_token=${data.token}`;
         })
+        const re = new RegExp(`(\\${context.filetype}|\\.html)$`);
         const files = response.values.filter(src => {
-          return src.type === 'commit_file' && /(\.gs|\.html)$/.test(src.path);
+          return src.type === 'commit_file' && re.test(src.path);
         });
         data.items = data.items.concat(files);
         data.urls = data.urls.concat(dirs);
