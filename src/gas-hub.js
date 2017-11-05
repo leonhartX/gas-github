@@ -46,18 +46,17 @@ function initContext() {
   context.id = match[2];
 
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch', 'bindType'], (item) => {
+    chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch', 'bindType', 'bindPattern'], (item) => {
       if (!item.token) {
         reject(new Error('need login'));
-      }
-      if (!item.scm) {
-        reject(new Error('need relogin'));
       }
       scm = createSCM(item);
       context.bindRepo = item.bindRepo || {};
       context.bindBranch = item.bindBranch || {};
       context.bindType = item.bindType || {};
+      context.bindPattern = item.bindPattern || {};
       context.filetype = context.bindType[context.id] || '.gs';
+      context.ignorePattern = (context.bindPattern[context.id] || []).map(p => new RegExp(p));
       context.gist = context.bindRepo[context.id] && context.bindRepo[context.id].gist;
       resolve(scm);
     });
@@ -188,31 +187,40 @@ function initPageEvent() {
   });
 
   ['pull', 'push', 'config'].forEach((type) => {
-    $(document).on('mouseover', `#${type}Button`, () => {
-      $(`#${type}Button`).addClass('goog-toolbar-button-hover');
+    $(document).on('mouseover', `#${type}-button`, () => {
+      $(`#${type}-button`).addClass('goog-toolbar-button-hover');
     });
-    $(document).on('mouseleave', `#${type}Button`, () => {
-      $(`#${type}Button`).removeClass('goog-toolbar-button-hover');
+    $(document).on('mouseleave', `#${type}-button`, () => {
+      $(`#${type}-button`).removeClass('goog-toolbar-button-hover');
     });
   });
 
   ['pull', 'push'].forEach(type => {
-    $(document).on('click', `#${type}Button`, () => {
+    $(document).on('click', `#${type}-button`, () => {
       prepareCode()
       .then((data) => { showDiff(data, type); }) //get more performance over callback
       .catch((err) => { showAlert(err.message, LEVEL_ERROR); });
     });
   })
 
-  $(document).on('click', '#configButton', () => {
+  $(document).on('click', '#config-button', () => {
     $('#filetype').val(context.filetype);
+    $('#ignore-pattern').val(context.bindPattern[context.id].join(';'));
     changeModalState('config', true);
   });
 
-  $(document).on('change', '#filetype', () => {
+  $(document).on('click', '#save-config', () => {
     context.filetype = $('#filetype').val();
     context.bindType[context.id] = context.filetype;
-    chrome.storage.sync.set({ bindType: context.bindType });
+    let pattern = $('#ignore-pattern').val().split(';').filter(p => p !== '');
+    context.bindPattern[context.id] = pattern;
+    try {
+      context.ignorePattern = pattern.map(p => new RegExp(p));
+      chrome.storage.sync.set({ bindType: context.bindType, bindPattern: context.bindPattern });
+      changeModalState('config', false);
+    } catch (err) {
+      showAlert(err.message, LEVEL_ERROR);
+    }
   })
 
   $(document).on('click', '.scm-item', (event) => {
@@ -303,7 +311,11 @@ function showDiff(code, type) {
     return gasFiles.indexOf(e) < 0;
   })
   .concat(gasFiles)
-  .filter((file) => {
+  .filter(file => {
+    for (let i = 0; i < context.ignorePattern.length; i ++) {
+      let p = context.ignorePattern[i];
+      if (p.test(file)) return false; 
+    }
     const match = file.match(/(.*?)\.(gs|html)$/);
     return match && match[1] && match[2];
   })
@@ -491,14 +503,14 @@ function getBaseUrl() {
 
 function changeModalState(type, toShow) {
   if (toShow) {
-    const margin = type === 'config' ? 600 : 400;
+    const margin = 600;
     const width = $('body').width();
     const height = $('body').height();
     const left = (width - margin) / 2;
-    $(`#${type}Modal`).before(`<div class="scm-modal-bg modal-dialog-bg" style="opacity: 0.5; width: ${width}px; height: ${height}px;" aria-hidden="true"></div>`);
-    $(`#${type}Modal`).css('left', left).show();
+    $(`#${type}-modal`).before(`<div class="scm-modal-bg modal-dialog-bg" style="opacity: 0.5; width: ${width}px; height: ${height}px;" aria-hidden="true"></div>`);
+    $(`#${type}-modal`).css('left', left).show();
   } else {
-    $(`#${type}Modal`).hide();
+    $(`#${type}-modal`).hide();
     $('.scm-modal-bg').remove();
     $(`#new-${type}-name`).css('border-color', '');
   }
