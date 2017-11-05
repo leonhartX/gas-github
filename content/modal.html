@@ -1,4 +1,4 @@
-<div id="diffModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 180px; display: none;">
+<div id="diff-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 180px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Diff</span>
     <span class="modal-dialog-title-text">(warning, only .gs and .html files will be synced)</span>
@@ -24,7 +24,7 @@
   </div>
 </div>
 
-<div id="repoModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+<div id="repo-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Create Repository</span>
     <span class="scm-repo-modal-close modal-dialog-title-close"></span>
@@ -48,7 +48,7 @@
               </tr> 
             <tr class="properties-data-dialog-table-row">
               <td><div>Repository Name</div></td>
-              <td><input id="new-repo-name" class="editable-row-input large-input" type="text"></td>
+              <td><input id="new-repo-name" class="editable-row-input large-input" type="text" placeholder="new-repo-name"></td>
             </tr>
             <tr class="properties-data-dialog-table-row">
               <td><div>Description</div></td>
@@ -74,7 +74,7 @@
   </div>
 </div>
 
-<div id="gistModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+<div id="gist-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Create Gist</span>
     <span class="scm-gist-modal-close modal-dialog-title-close"></span>
@@ -113,7 +113,7 @@
   </div>
 </div>
 
-<div id="branchModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+<div id="branch-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Create Branch</span>
     <span class="scm-branch-modal-close modal-dialog-title-close"></span>
@@ -130,7 +130,7 @@
             </tr>
             <tr class="properties-data-dialog-table-row">
               <td><div>Branch Name</div></td>
-              <td><input id="new-branch-name" class="editable-row-input large-input" type="text"></td>
+              <td><input id="new-branch-name" class="editable-row-input large-input" type="text" placeholder="new-branch-name"></td>
             </tr>
           </tbody>
         </table>
@@ -143,13 +143,13 @@
   </div>
 </div>
 
-<div id="configModal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+<div id="config-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Config sync options</span>
     <span class="scm-config-modal-close modal-dialog-title-close"></span>
   </div>
   <div class="modal-dialog-content">
-    <div class="goog-inline-block" style="width: 400px; height: 90px;">
+    <div class="goog-inline-block" style="width: 600px; height: 100px;">
       <div class="scm-config">
         <table class="properties-data-dialog-table">
           <tbody>
@@ -167,9 +167,15 @@
                 </select>
               </div></td>
             </tr>
-          </tbody>
+           <tr class="properties-data-dialog-table-row">
+              <td><div>Ignore filen patterns (regex separated by ';')</div></td>
+              <td><input id="ignore-pattern" class="editable-row-input large-input" type="text"></td>
         </table>
       </div>
     </div>
+  </div>
+  <div class="scm-modal-button modal-dialog-buttons">
+    <button id="save-config" type="button" class="goog-buttonset-default goog-buttonset-action">Save</button>
+    <button type="button" class="scm-config-modal-close">Cancel</button>
   </div>
 </div>
