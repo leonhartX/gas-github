@@ -41,10 +41,6 @@ The **PULL/PUSH** is not actually the same as Github/Bitbucket's **PULL/PUSH**, 
 The differences are:
 
 - `Pull` will fetch code form the bind Repository/Branch, and **OVERWRITE** to current GAS Project. There is no merge operation.
-- `Pull` will create new file when the file only shows in SCM.
-  - v2.0.0 has supported the file deletion when old files do not exist in SCM.
-- `Push` will commit file changed, file added to SCM, but not file deleted.
-  - v2.0.0 has supportd to delete files on SCM. Directory will be deleted when all files under the dir has been deleted.
 
 Other points:
 - A diff dialog will be shown before you confirm to `Push` or `Pull`.
@@ -79,6 +75,8 @@ but you will need to delete the token or revoke Bitbucket's oauth yourself from 
  - Work with directory(with slash in filename)
  - Support Github Organization and Bitbucket Team.
  - Google Apps Script native ui
+ - Option to change filetype from `.gs` to `.js` when upload to SCM
+ - Option to add ignore file pattern.
 
 # 4.Support
 please create an issue for any question or bug report.
