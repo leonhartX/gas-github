@@ -205,7 +205,8 @@ function initPageEvent() {
 
   $(document).on('click', '#config-button', () => {
     $('#filetype').val(context.filetype);
-    $('#ignore-pattern').val(context.bindPattern[context.id].join(';'));
+    const pattern = context.bindPattern[context.id] || [];
+    $('#ignore-pattern').val(pattern.join(';'));
     changeModalState('config', true);
   });
 
