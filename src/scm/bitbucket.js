@@ -270,7 +270,7 @@ class Bitbucket {
         const link = response.next;
         let url = null;
         if (link) {
-          url = `${link}&access_token=${data.token}`;
+          url = link;
         }
         resolve({ items: data.items, url: url });
       })
