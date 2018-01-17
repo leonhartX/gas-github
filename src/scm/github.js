@@ -23,7 +23,6 @@ class Github {
 
   pushToRepo(code) {
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
-    const unchanged = Object.keys(code.gas).filter((f) => changed.indexOf(f) < 0 );
     const promises = changed.filter(f => code.gas[f]).map((file) => {
       const payload = {
         content: code.gas[file],
@@ -41,7 +40,7 @@ class Github {
         data: JSON.stringify(payload)
       })
       .then(response => {
-        return {file: file.replace(/\.gs$/, context.filetype), blob: response};
+        return {file: file.replace(/\.gs$/, context.config.filetype), blob: response};
       })
     });
     if (changed.length === 0) {
@@ -65,7 +64,6 @@ class Github {
         }
       )
       .then(baseTree => {
-        const re = new RegExp(`(\\${context.filetype}|\\.html)$`);
         const tree = responses[0].map((data) => {
           return {
             path: data.file,
@@ -75,7 +73,7 @@ class Github {
           }
         })
         .concat(baseTree.tree.filter((t) =>  {
-          return (t.type != 'tree') && (!re.test(t.path) || unchanged.indexOf(t.path) >= 0);
+          return (t.type != 'tree') && (changed.indexOf(t.path) < 0);
         }));
         return {
           tree: tree
@@ -156,7 +154,7 @@ class Github {
       files: {}
     };
     files.forEach(file => {
-      payload.files[file.replace(/\.gs$/, context.filetype)] = {
+      payload.files[file.replace(/\.gs$/, context.config.filetype)] = {
         content: code.gas[file]
       };
     });
@@ -222,7 +220,7 @@ class Github {
       );
     })
     .then(response => {
-      const re = new RegExp(`(\\${context.filetype}|\\.html)$`);
+      const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
       const promises = response.tree.filter((tree) => {
         return tree.type === 'blob' && re.test(tree.path);
       })

@@ -5,10 +5,14 @@ class Gas {
     const changed = $('.diff-file:checked').toArray().map(e => e.value);
     const updatePromises = changed.filter(f => code.scm[f])
     .map((file) => {
-      const match = file.match(/(.*?)\.(gs|html)$/);
+      const match = file.match(/(.*?)\.(gs|html|json)$/);
       if (!match || !match[1] || !match[2]) {
-        showAlert('Unknow Error', LEVEL_ERROR);
+        showAlert('Unsupported file type.', LEVEL_ERROR);
         return;
+      } 
+      if (match[2] === 'json' && match[1] !== 'appsscript') {
+        showAlert('Unsupported file type', LEVEL_ERROR);
+        return; 
       }
       const name = match[1];
       const type = match[2];
