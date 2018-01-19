@@ -46,7 +46,17 @@ function initContext() {
   context.id = match[2];
 
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['scm', 'token', 'user', 'baseUrl', 'bindRepo', 'bindBranch', 'bindType', 'bindPattern'], (item) => {
+    chrome.storage.sync.get([
+      'scm',
+      'token',
+      'user',
+      'baseUrl',
+      'bindRepo',
+      'bindBranch',
+      'bindType',
+      'bindPattern',
+      'bindConfig'
+    ], (item) => {
       if (!item.token) {
         reject(new Error('need login'));
       }
@@ -55,8 +65,11 @@ function initContext() {
       context.bindBranch = item.bindBranch || {};
       context.bindType = item.bindType || {};
       context.bindPattern = item.bindPattern || {};
-      context.filetype = context.bindType[context.id] || '.gs';
-      context.ignorePattern = (context.bindPattern[context.id] || []).map(p => new RegExp(p));
+      context.bindConfig = item.bindConfig || {};
+      context.config = context.bindConfig[context.id] || {};
+      context.config.filetype = context.config.filetype || context.bindType[context.id] || '.gs';
+      context.config.ignorePattern = context.config.ignorePattern || context.bindPattern[context.id] || [];
+      context.config.manifestEnabled = context.config.manifestEnabled || false;
       context.gist = context.bindRepo[context.id] && context.bindRepo[context.id].gist;
       resolve(scm);
     });
@@ -204,20 +217,19 @@ function initPageEvent() {
   })
 
   $(document).on('click', '#config-button', () => {
-    $('#filetype').val(context.filetype);
-    const pattern = context.bindPattern[context.id] || [];
-    $('#ignore-pattern').val(pattern.join(';'));
+    $('#filetype').val(context.config.filetype);
+    $('#manage-manifest').prop("checked", context.config.manifestEnabled);
+    $('#ignore-pattern').val(context.config.ignorePattern.join(';'));
     changeModalState('config', true);
   });
 
   $(document).on('click', '#save-config', () => {
-    context.filetype = $('#filetype').val();
-    context.bindType[context.id] = context.filetype;
-    let pattern = $('#ignore-pattern').val().split(';').filter(p => p !== '');
-    context.bindPattern[context.id] = pattern;
+    context.config.filetype = $('#filetype').val();
+    context.config.manifestEnabled = $('#manage-manifest').prop( "checked" );
+    context.config.ignorePattern = $('#ignore-pattern').val().split(';').filter(p => p !== '');
+    context.bindConfig[context.id] = context.config;
     try {
-      context.ignorePattern = pattern.map(p => new RegExp(p));
-      chrome.storage.sync.set({ bindType: context.bindType, bindPattern: context.bindPattern });
+      chrome.storage.sync.set({ bindConfig: context.bindConfig });
       changeModalState('config', false);
     } catch (err) {
       showAlert(err.message, LEVEL_ERROR);
@@ -275,8 +287,11 @@ function initPageEvent() {
 function prepareCode() {
   return Promise.all([gas.getGasCode(), scm.getCode()])
   .then((data) => {
-    const re = new RegExp(`\\${context.filetype}$`);
+    const re = new RegExp(`\\${context.config.filetype}$`);
     const files = $('.item').toArray().reduce((hash, e) => {
+      if (context.config.manifestEnabled && e.innerText === 'appsscript.json') {
+        hash['appsscript'] = 'appsscript.json';
+      }
       const match = e.innerText.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) return hash;
       hash[match[1]] = match[0];
@@ -313,8 +328,11 @@ function showDiff(code, type) {
   })
   .concat(gasFiles)
   .filter(file => {
-    for (let i = 0; i < context.ignorePattern.length; i ++) {
-      let p = context.ignorePattern[i];
+    if (context.config.manifestEnabled && file === 'appsscript.json') {
+      return true;
+    }
+    for (let i = 0; i < context.config.ignorePattern.length; i ++) {
+      let p = new RegExp(context.config.ignorePattern[i]);
       if (p.test(file)) return false; 
     }
     const match = file.match(/(.*?)\.(gs|html)$/);
@@ -325,6 +343,9 @@ function showDiff(code, type) {
     if (!oldCode[file]) {
       mode = 'new file mode 100644';
     } else if (!newCode[file]) {
+      if (file === 'appsscript.json') {
+        return diff; //can not delete manifest file
+      }
       mode = 'deleted file mode 100644';
     }
     let fileDiff = JsDiff.createPatch(file, oldCode[file] || '', newCode[file] || '');
