@@ -95,13 +95,13 @@ class Gas {
         return typeof(e) === 'object';
       })[0];
       const ids = initData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
-      context.projectId = initData[initData.indexOf(ids[0]) + 1];
+      context.projectId = initData[initData.indexOf(ids[0]) + 2];
       if (context.projectId.length != 33) {
         reject(new Error('cant not get project ID'));
       }
       const promises = ids.map((id) => {
         return new Promise((resolve, reject) => {
-          const payload = `7|1|8|${getBaseUrl()}\|${context.gasToken}|_|getFileContent|k|${id}|${context.projectId}|l|1|2|3|4|1|5|5|6|7|8|0|0|`;
+          const payload = `7|1|9|${getBaseUrl()}\|${context.gasToken}|_|getFileContent|k|${id}|${context.id}|${context.projectId}|l|1|2|3|4|1|5|5|6|7|8|9|0|0|`;
           $.ajax({
             url: context.gasUrl,
             headers: context.gasHeaders,
@@ -116,7 +116,7 @@ class Gas {
             const codeContent = eval(response.slice(4)).filter((e) => {
               return typeof(e) === 'object';
             })[0];
-            resolve({file : codeContent[codeContent.length - 6], content: codeContent[codeContent.length - 10], id : id });
+            resolve({file : codeContent[codeContent.length - 7], content: codeContent[codeContent.length - 11], id : id });
           })
           .fail(reject);
         })
