@@ -11,6 +11,8 @@ With this extension, you can manage your code in GAS editor, push code to a new 
 
 The extension does not use Google Drive API, so you don't need any google authentication. Moreover, this extension support **Bound scripts**.
 
+# **NOTIC**
+This extension is a hack of the GAS IDE's internal RPC, so there's no guarantee of anything. This extension can broken **ANYTIME** if Google changed their api.
 
 # 1.Install
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
