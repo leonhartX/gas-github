@@ -96,6 +96,11 @@ class Gas {
       })[0];
       const ids = initData.filter((data) => { return /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(data) });
       context.projectId = initData[initData.indexOf(ids[0]) + 2];
+      if (context.projectId === context.id)  {
+        // for bounded script
+        context.id = initData[initData.indexOf(ids[0]) + 1]; 
+      }
+
       if (context.projectId.length != 33) {
         reject(new Error('cant not get project ID'));
       }
