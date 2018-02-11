@@ -65,7 +65,7 @@ class Gas {
   * this is very volatile since it is just inferred from code
   */
   getGasContext() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       chrome.storage.local.get(['requestUrl' ,'requestHeaders', 'requestBody', 'gasToken'], resolve);
     })
     .then((param) => {
