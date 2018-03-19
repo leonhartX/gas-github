@@ -516,11 +516,7 @@ function handleGistCreated() {
 }
 
 function getBaseUrl() {
-  if(context.isBound) {
-    return `https://script.google.com/macros/d/${context.projectId}/gwt/`;
-  } else {
-    return `https://script.google.com/d/${context.id}/gwt/`
-  }
+  return context.gasHeaders["X-GWT-Module-Base"];
 }
 
 function changeModalState(type, toShow) {
