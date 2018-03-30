@@ -195,15 +195,6 @@ class Gitlab {
         chrome.storage.sync.set({bindRepo: context.bindRepo});
         return response.name;
       })
-      .then(repo => {
-        return this.commitFiles(repo, 'master', null, [{
-          name: "README.md",
-          content: "initialed by gas-github"
-        }], null, 'initial commit')
-          .then(() => {
-            return repo;
-          });
-      })
       .catch((err) => {
         throw new Error('Failed to create new repository.');
       });
