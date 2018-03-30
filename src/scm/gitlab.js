@@ -117,7 +117,7 @@ class Gitlab {
   }
 
   getNamespaces() {
-    let testUrl = `${this.baseUrl}/users/${this.user}/projects?access_token=${this.accessToken}`;
+    let testUrl = `${this.baseUrl}/groups?access_token=${this.accessToken}`;
       return getAllItems(Promise.resolve(
         {
           token: this.accessToken,
@@ -127,8 +127,8 @@ class Gitlab {
         this.followPaginate,
         'gitlab'
       )
-    .then(projects => {
-      this.namespaces = [this.user].concat(projects.map(project => project.username));
+    .then(groups => {
+      this.namespaces = [this.user].concat(groups.map(group => group.name));
       return this.namespaces;
     })
     .catch((err) => {
