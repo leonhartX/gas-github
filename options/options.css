@@ -61,7 +61,7 @@
 .form .logout-container {
   display: none;
 }
-.form .ghe-login-container, .form .bitbucket-login-container {
+.form .ghe-login-container, .form .bitbucket-login-container, .form .gitlab-login-container {
   display: none;
 }
 .form .error {

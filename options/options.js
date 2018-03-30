@@ -15,6 +15,9 @@ $(() => {
   $('#bitbucket-login').click(e => {
     addCred(getBitbucketParam());
   });
+  $('#gitlab-login').click(e => {
+    addCred(getGitLabParam());
+  });
   $('#logout').click(e => {
     logout();
   });
@@ -24,26 +27,33 @@ $(() => {
     $('.login-container').hide();
     $('.logout-container').show();
     let user = item.user, domain, userLink, tokenLink;
-    if(item.scm !== 'bitbucket') {
-      domain = '@Github.com';
-      userLink = `https://github.com/${item.user}`;
-      tokenLink = 'https://github.com/settings/tokens';
-      if (item.baseUrl !== 'https://api.github.com') {
-        let match = item.baseUrl.match(/:\/\/(.*)\/api\/v3/);
-        if (!match || !match[1]) {
-          domain = '';
-          userLink = '';
-          tokenLink = '';
-        } else {
-          domain = `@${match[1]}`;
-          userLink = `https://${match[1]}/${item.user}`;
-          tokenLink = `https://${match[1]}/settings/tokens`;
-        }
-      }
+
+
+
+    if(item.scm === 'bitbucket') {
+        domain = '@Bitbucket.org';
+        userLink = `https://bitbucket.org/${user}`;
+        tokenLink = `https://bitbucket.org/account/user/${user}/api`;
+    } else if(item.scm === 'gitlab') {
+        domain = '@gitlab.com';
+        userLink = `https://gitlab.com/${user}`;
+        tokenLink = `https://gitlab.com/account/user/${user}/api`;
     } else {
-      domain = '@Bitbucket.org';
-      userLink = `https://bitbucket.org/${user}`;
-      tokenLink = `https://bitbucket.org/account/user/${user}/api`;
+        domain = '@Github.com';
+        userLink = `https://github.com/${item.user}`;
+        tokenLink = 'https://github.com/settings/tokens';
+        if (item.baseUrl !== 'https://api.github.com') {
+            let match = item.baseUrl.match(/:\/\/(.*)\/api\/v3/);
+            if (!match || !match[1]) {
+                domain = '';
+                userLink = '';
+                tokenLink = '';
+            } else {
+                domain = `@${match[1]}`;
+                userLink = `https://${match[1]}/${item.user}`;
+                tokenLink = `https://${match[1]}/settings/tokens`;
+            }
+        }
     }
 
     $('#login-user').text(`${user}${domain}`).attr('href', userLink);
@@ -101,6 +111,20 @@ function getBitbucketParam() {
   }
 }
 
+function getGitLabParam() {
+  const scm = 'gitlab';
+  const username = $('#gitlab-email').val();
+  const password = $('#gitlab-password').val();
+  const baseUrl = 'https://gitlab.com/api/v4';
+  return {
+    scm,
+    username,
+    password,
+    baseUrl
+  }
+}
+
+
 function addCred(param) {
   if (param.username === '') {
     return;
@@ -110,6 +134,7 @@ function addCred(param) {
   }
 
   if (param.scm === 'bitbucket') return loginBitbucket(param);
+  if (param.scm === 'gitlab') return loginGitLab(param);
   if (param.password !== '' && param.scm === 'github') return loginGithub(param);
 
   addStar(param.token)
@@ -219,6 +244,49 @@ function loginBitbucket(param) {
   .fail(() => {
     $('.error').show();
   })
+}
+function loginGitLab(param) {
+  const username = param.username;
+  const password = param.password;
+  const baseUrl = param.baseUrl;
+  const headers = {}
+  $.ajax({
+    url: `https://gitlab.com/oauth/token`,
+    headers: headers,
+    method: 'POST',
+    dataType: 'json',
+    contentType: 'application/x-www-form-urlencoded',
+    data: {
+      grant_type: 'password',
+      username: username,
+      password: password
+    }
+  })
+      .done(response => {
+        return $.getJSON(
+            `${baseUrl}/user`,
+            { access_token: response.access_token }
+        )
+            .done(user => {
+              chrome.storage.sync.set({scm: param.scm, user: user.username, token: response.refresh_token, baseUrl: baseUrl}, () => {
+                location.reload();
+              });
+              chrome.storage.local.get('tab', (item) => {
+                if(item.tab) {
+                  chrome.tabs.reload(item.tab);
+                }
+              });
+            });
+      })
+      .fail(err => {
+          if (err.status == 401 &&
+              err.getResponseHeader('X-GitLab-OTP') !== null &&
+              $('.login-item-otp').filter(':visible').length == 0) {
+              $('.login-item').animate({height: 'toggle', opacity: 'toggle'}, 'slow');
+          } else {
+              $('.error').show();
+          }
+      })
 }
 
 function logout() {

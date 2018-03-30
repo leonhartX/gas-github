@@ -57,6 +57,8 @@
     "https://script.google.com/*",
     "storage",
     "declarativeContent",
-    "webRequest"
+    "webRequest",
+    "https://gitlab.com/*"
+
   ]
 }
