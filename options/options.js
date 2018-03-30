@@ -268,7 +268,7 @@ function loginGitLab(param) {
             { access_token: response.access_token }
         )
             .done(user => {
-              chrome.storage.sync.set({scm: param.scm, user: user.username, token: response.refresh_token, baseUrl: baseUrl}, () => {
+              chrome.storage.sync.set({scm: param.scm, user: user.username, token: response.access_token, baseUrl: baseUrl}, () => {
                 location.reload();
               });
               chrome.storage.local.get('tab', (item) => {
