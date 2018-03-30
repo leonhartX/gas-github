@@ -22,32 +22,45 @@ class Gitlab {
   }
 
 
-  commitFiles(repo, branch, parent, files, deleteFiles, comment) {
+  commitFiles(repo, branch, parent, newFiles, changedFiles, deleteFiles, comment) {
     return new Promise((resolve, reject) => {
-      let data = files.reduce((hash, f) => {
-        hash[f.name] = f.content;
-        return hash;
-      }, {});
-      data.message = comment;
+      let data = {branch: branch,
+        commit_message: comment,
+      actions: []};
+      if (newFiles && newFiles.length > 0) {
+        data.actions = data.actions.concat(newFiles.map((file) => {
+          return {
+            action: 'create',
+            file_path: file.name,
+            content: file.content
+          }
+        }));
+      }
+      if (changedFiles && changedFiles.length > 0) {
+        data.actions = data.actions.concat(changedFiles.map((file) => {
+          return {
+            action: 'update',
+            file_path: file.name,
+            content: file.content
+          }
+        }));
+      }
       if (deleteFiles && deleteFiles.length > 0) {
-        data.files = deleteFiles;
-      }
-      if (branch) {
-        data.branch = branch;
-      }
-      if (parent) {
-        data.parents = parent;
+        data.actions = data.actions.concat(deleteFiles.map((file) => {return {
+          action : 'delete',
+          file_path : file
+        }}));
       }
       $.ajax({
-        url: `${this.baseUrl}/repositories/${repo}/src`,
+        url: `${this.baseUrl}/projects/${context.repo.id}/repository/commits`,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         },
-        contentType: 'application/x-www-form-urlencoded',
+        contentType: 'application/json',
         method: 'POST',
         crossDomain: true,
         traditional: true,
-        data: data,
+        data: JSON.stringify(data)
       })
         .then(resolve)
         .fail(reject);
@@ -56,13 +69,19 @@ class Gitlab {
 
   push(code) {
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
-    const files = changed.filter(f => code.gas[f]).map(f => {
+    const changedFiles = changed.filter(f => code.gas[f]).map(f => {
       return {name: f.replace(/\.gs$/, context.config.filetype), content: code.gas[f]}
     });
     const deleteFiles = changed.filter(f => !code.gas[f]);
+    const newFileNames = changed.filter(f => !code.scm[f]);
+    const updatedFileNames = changed.filter(f => !newFileNames.includes(f));
+
+    const newFiles = changedFiles.filter(f => newFileNames.includes(f.name));
+    const updatedFiles = changedFiles.filter(f => updatedFileNames.includes(f.name));
+
     const comment = $('#commit-comment').val();
 
-    this.commitFiles(context.repo.fullName, context.branch, null, files, deleteFiles, comment)
+    this.commitFiles(context.repo.fullName, context.branch, null, newFiles, updatedFiles, deleteFiles, comment)
       .then(() => {
         showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
       })
@@ -87,7 +106,7 @@ class Gitlab {
   getCode() {
     return new Promise((resolve, reject) => {
       return $.getJSON(
-        `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&access_token=${this.accessToken}`, {}
+        `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&recursive=true&access_token=${this.accessToken}`, {}
       )
         .then(resolve)
         .fail(reject)
@@ -98,7 +117,7 @@ class Gitlab {
             return tree.type === 'blob' && re.test(tree.path);
           })
             .map(tree => {
-              var xx = `${this.baseUrl}/projects/${context.repo.id}/repository/files/${tree.path}?ref=${context.branch}&access_token=${this.accessToken}`;
+              var xx = `${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&access_token=${this.accessToken}`;
               return new Promise((resolve, reject) => {
                 $.getJSON(xx, {})
                   .then((content) => {
