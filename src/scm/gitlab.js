@@ -5,8 +5,8 @@ class Gitlab {
     this.baseUrl = baseUrl;
     this.user = user;
     this.namesToIds = {
-      repos : {},
-      groups : {}
+      repos: {},
+      groups: {}
     };
     this.accessToken = token;
     this.namespaces = [user];
@@ -72,49 +72,43 @@ class Gitlab {
   }
 
   getAllBranches() {
-        return getAllItems(Promise.resolve(
-          {
-            token: this.accessToken,
-            items: [],
-            url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?access_token=${this.accessToken}`
-          }),
-          this.followPaginate,
-          'gitlab'
-        );
+    context.repo.id = context.repo.id || this.namesToIds.repos[context.repo.fullName];
+    return getAllItems(Promise.resolve(
+      {
+        token: this.accessToken,
+        items: [],
+        url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?access_token=${this.accessToken}`
+      }),
+      this.followPaginate,
+      'gitlab'
+    );
   }
 
   getCode() {
-    return this.getAccessToken()
-      .then(accessToken => {
-        return $.getJSON(
-          `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`,
-          {access_token: accessToken}
-        )
-      })
-      .then(response => {
-        return getAllItems(Promise.resolve(
-          {
-            token: this.accessToken,
-            items: [],
-            urls: [],
-            url: `${this.baseUrl}/repositories/${context.repo.fullName}/src/${response.target.hash}/?access_token=${this.accessToken}`
-          }),
-          this.followDirectory,
-          'gitlab'
-        )
-          .then(response => {
-            const promises = response.map(src => {
+    return new Promise((resolve, reject) => {
+      return $.getJSON(
+        `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&access_token=${this.accessToken}`, {}
+      )
+        .then(resolve)
+        .fail(reject)
+    })
+        .then(response => {
+          const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
+          const promises = response.filter((tree) => {
+            return tree.type === 'blob' && re.test(tree.path);
+          })
+            .map(tree => {
+              var xx = `${this.baseUrl}/projects/${context.repo.id}/repository/files/${tree.path}?ref=${context.branch}&access_token=${this.accessToken}`;
               return new Promise((resolve, reject) => {
-                $.get(src.links.self.href, {access_token: this.accessToken})
-                  .then(content => {
-                    resolve({file: src.path, content: content});
+                $.getJSON(xx, {})
+                  .then((content) => {
+                    resolve({file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
                   })
                   .fail(reject)
               });
             });
-            return Promise.all(promises);
-          });
-      });
+          return Promise.all(promises);
+        });
   }
 
   getNamespaces() {
@@ -148,7 +142,7 @@ class Gitlab {
       'gitlab'
     )
       .then(response => {
-        this.namesToIds.repos = response.reduce((obj, item) => (obj[item.name] = item.id, obj) ,{});
+        this.namesToIds.repos = response.reduce((obj, item) => (obj[item.name] = item.id, obj), {});
         const repos = Object.keys(this.namesToIds.repos);
         //if current bind still existed, use it
         const repo = context.bindRepo[context.id];
@@ -165,7 +159,7 @@ class Gitlab {
     const desc = $('#new-repo-desc').val();
     const visibility = ($('#new-repo-type').val() !== 'public') ? 'private' : 'public';
     const payload = {
-      name : name,
+      name: name,
       description: desc,
       visibility: visibility
     };
@@ -203,73 +197,43 @@ class Gitlab {
       });
   }
 
-createBranch()
-{
-  const branch = $('#new-branch-name').val();
-  if (!branch || branch === '') return;
-  return this.getAccessToken()
-    .then(() => {
+  createBranch() {
+    const branch = $('#new-branch-name').val();
+    if (!branch || branch === '') return;
+    return new Promise((resolve, reject) => {
       return $.getJSON(
         `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`,
         {access_token: this.accessToken}
       );
     })
-    .then(res => {
-      const parent = res.target ? res.target.hash : null;
-      return this.commitFiles(context.repo.fullName, branch, parent, [], null, `create new branch ${branch}`);
-    })
-    .then(() => {
-      context.branch = branch;
-      Object.assign(context.bindBranch, {[context.id]: branch});
-      chrome.storage.sync.set({bindBranch: context.bindBranch});
-      return branch;
-    })
-    .catch(err => {
-      throw new Error('Failed to create new branch.');
-    });
-}
-
-followPaginate(data)
-{
-  return new Promise((resolve, reject) => {
-    $.getJSON(data.url)
-      .then(response => {
-        data.items = data.items.concat(response);
-        const link = response.next;
-        let url = null;
-        if (link) {
-          url = link;
-        }
-        resolve({items: data.items, url: url});
+      .then(res => {
+        const parent = res.target ? res.target.hash : null;
+        return this.commitFiles(context.repo.fullName, branch, parent, [], null, `create new branch ${branch}`);
       })
-      .fail(reject);
-  })
-}
+      .then(() => {
+        context.branch = branch;
+        Object.assign(context.bindBranch, {[context.id]: branch});
+        chrome.storage.sync.set({bindBranch: context.bindBranch});
+        return branch;
+      })
+      .catch(err => {
+        throw new Error('Failed to create new branch.');
+      });
+  }
 
-followDirectory(data)
-{
-  return new Promise((resolve, reject) => {
-    $.getJSON(data.url)
-      .then(response => {
-        const dirs = response.values.filter(src => {
-          return src.type === 'commit_directory';
-        }).map(dir => {
-          return `${dir.links.self.href}?access_token=${data.token}`;
+  followPaginate(data) {
+    return new Promise((resolve, reject) => {
+      $.getJSON(data.url)
+        .then(response => {
+          data.items = data.items.concat(response);
+          const link = response.next;
+          let url = null;
+          if (link) {
+            url = link;
+          }
+          resolve({items: data.items, url: url});
         })
-        const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
-        const files = response.values.filter(src => {
-          return src.type === 'commit_file' && re.test(src.path);
-        });
-        data.items = data.items.concat(files);
-        data.urls = data.urls.concat(dirs);
-        let link = response.next;
-        if (link) {
-          data.urls.push(`${link}&access_token=${data.token}`);
-        }
-        data.url = data.urls.shift();
-        resolve(data);
-      })
-      .fail(reject);
-  })
-}
+        .fail(reject);
+    })
+  }
 }
