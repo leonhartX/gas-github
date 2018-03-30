@@ -4,6 +4,10 @@ class Gitlab {
   constructor(baseUrl, user, token) {
     this.baseUrl = baseUrl;
     this.user = user;
+    this.namesToIds = {
+      repos : {},
+      groups : {}
+    };
     this.accessToken = token;
     this.namespaces = [user];
     debugger;
@@ -68,18 +72,15 @@ class Gitlab {
   }
 
   getAllBranches() {
-    return this.getAccessToken()
-      .then(accessToken => {
         return getAllItems(Promise.resolve(
           {
-            token: accessToken,
+            token: this.accessToken,
             items: [],
-            url: `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches?access_token=${accessToken}`
+            url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?access_token=${this.accessToken}`
           }),
           this.followPaginate,
           'gitlab'
         );
-      });
   }
 
   getCode() {
@@ -136,7 +137,7 @@ class Gitlab {
       });
   }
 
-  getRepos() {
+  getRepos() { // Named Projects in gitlab
     return getAllItems(Promise.resolve(
       {
         token: this.accessToken,
@@ -147,7 +148,8 @@ class Gitlab {
       'gitlab'
     )
       .then(response => {
-        const repos = response.map(repo => repo.name);
+        this.namesToIds.repos = response.reduce((obj, item) => (obj[item.name] = item.id, obj) ,{});
+        const repos = Object.keys(this.namesToIds.repos);
         //if current bind still existed, use it
         const repo = context.bindRepo[context.id];
         if (repo && $.inArray(repo.fullName, repos) >= 0) {
@@ -185,7 +187,8 @@ class Gitlab {
     })
       .then(response => {
         const repo = {
-          fullName: response.name
+          fullName: response.name,
+          id: response.id
         };
         context.repo = repo;
         Object.assign(context.bindRepo, {[context.id]: repo});
