@@ -218,23 +218,32 @@ class Gitlab {
 
   createBranch() {
     const branch = $('#new-branch-name').val();
+    const payload = {
+      branch: branch,
+      ref: context.branch
+    };
     if (!branch || branch === '') return;
     return new Promise((resolve, reject) => {
-      return $.getJSON(
-        `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`,
-        {access_token: this.accessToken}
-      );
-    })
-      .then(res => {
-        const parent = res.target ? res.target.hash : null;
-        return this.commitFiles(context.repo.fullName, branch, parent, [], null, `create new branch ${branch}`);
+        return $.ajax({
+          url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches`,
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          },
+          method: 'POST',
+          crossDomain: true,
+          dataType: 'json',
+          contentType: 'application/json',
+          data: JSON.stringify(payload)
+        })
+          .then(resolve)
+          .fail(reject);
       })
-      .then(() => {
-        context.branch = branch;
-        Object.assign(context.bindBranch, {[context.id]: branch});
-        chrome.storage.sync.set({bindBranch: context.bindBranch});
-        return branch;
-      })
+        .then(response => {
+          context.branch = branch;
+          Object.assign(context.bindBranch, { [context.id] : branch });
+          chrome.storage.sync.set({ bindBranch: context.bindBranch });
+          return branch;
+        })
       .catch(err => {
         throw new Error('Failed to create new branch.');
       });
