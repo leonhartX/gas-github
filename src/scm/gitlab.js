@@ -8,9 +8,19 @@ class Gitlab {
       repos: {},
       groups: {}
     };
-    this.accessToken = token;
+    this.accessToken = token.token;
+    if(token.type === 'oAuth') {
+      this.tokenParam = 'access_token=' & this.accessToken;
+      this.tokenHeader = {
+        'Authorization': `Bearer ${this.accessToken}`
+      };
+    } else {
+      this.tokenParam = 'private_token=' & this.accessToken;
+      this.tokenHeader = {
+        'Private-Token': this.accessToken
+      };
+    }
     this.namespaces = [user];
-    debugger;
   }
 
   get name() {
@@ -53,9 +63,7 @@ class Gitlab {
       }
       $.ajax({
         url: `${this.baseUrl}/projects/${context.repo.id}/repository/commits`,
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        },
+        headers: this.tokenHeader,
         contentType: 'application/json',
         method: 'POST',
         crossDomain: true,
@@ -96,7 +104,7 @@ class Gitlab {
       {
         token: this.accessToken,
         items: [],
-        url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?access_token=${this.accessToken}`
+        url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?${this.tokenParam}`
       }),
       this.followPaginate,
       'gitlab'
@@ -106,7 +114,7 @@ class Gitlab {
   getCode() {
     return new Promise((resolve, reject) => {
       return $.getJSON(
-        `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&recursive=true&access_token=${this.accessToken}`, {}
+        `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&recursive=true&${this.tokenParam}`, {}
       )
         .then(resolve)
         .fail(reject)
@@ -117,7 +125,7 @@ class Gitlab {
             return tree.type === 'blob' && re.test(tree.path);
           })
             .map(tree => {
-              var xx = `${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&access_token=${this.accessToken}`;
+              var xx = `${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&${this.tokenParam}`;
               return new Promise((resolve, reject) => {
                 $.getJSON(xx, {})
                   .then((content) => {
@@ -131,7 +139,7 @@ class Gitlab {
   }
 
   getNamespaces() {
-    let testUrl = `${this.baseUrl}/groups?access_token=${this.accessToken}`;
+    let testUrl = `${this.baseUrl}/groups?${this.tokenParam}`;
     return getAllItems(Promise.resolve(
       {
         token: this.accessToken,
@@ -155,7 +163,7 @@ class Gitlab {
       {
         token: this.accessToken,
         items: [],
-        url: `${this.baseUrl}/users/${this.user}/projects?access_token=${this.accessToken}`
+        url: `${this.baseUrl}/users/${this.user}/projects?${this.tokenParam}`
       }),
       this.followPaginate,
       'gitlab'
@@ -186,9 +194,7 @@ class Gitlab {
     return new Promise((resolve, reject) => {
       return $.ajax({
         url: `${this.baseUrl}/projects`,
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        },
+        headers: this.tokenHeader,
         method: 'POST',
         crossDomain: true,
         dataType: 'json',
@@ -226,9 +232,7 @@ class Gitlab {
     return new Promise((resolve, reject) => {
         return $.ajax({
           url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches`,
-          headers: {
-            'Authorization': `Bearer ${this.accessToken}`
-          },
+          headers: this.tokenHeader,
           method: 'POST',
           crossDomain: true,
           dataType: 'json',

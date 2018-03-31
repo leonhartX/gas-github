@@ -59,8 +59,12 @@
       </div>
         <div class="login-container gitlab-login-container">
           <div class="login-item login-item-basic">
+            <input id="gitlab-url" type="text" placeholder="https://gitlab.com"/>
             <input id="gitlab-email" type="email" placeholder="email"/>
+            <p class="label">login with password:</p>
             <input id="gitlab-password" type="password" placeholder="password"/>
+            <p class="label">or personal accessToken(with <b>api</b> scope):</p>
+            <input id="gitlab-accesstoken" type="password" placeholder="access token"/>
           </div>
           <button id="gitlab-login">gitlab login</button>
           <p class="message">Please star this extension on <a href="https://github.com/leonhartX/gas-github">Github</a> for support</p>
