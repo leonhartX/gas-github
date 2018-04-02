@@ -256,14 +256,15 @@ class Gitlab {
   followPaginate(data) {
     return new Promise((resolve, reject) => {
       $.getJSON(data.url)
-        .then(response => {
+        .then((response, status, xhr) => {
           data.items = data.items.concat(response);
-          const link = response.next;
+          const link = xhr.getResponseHeader('Link');
           let url = null;
           if (link) {
-            url = link;
+            const match = link.match(/<(.*?)>; rel="next"/);
+            url = match && match[1] ? match[1] : null;
           }
-          resolve({items: data.items, url: url});
+          resolve({ items: data.items, url: url });
         })
         .fail(reject);
     })
