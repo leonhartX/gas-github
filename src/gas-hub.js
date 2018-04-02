@@ -516,7 +516,7 @@ function handleGistCreated() {
 }
 
 function getBaseUrl() {
-  return context.gasHeaders["X-GWT-Module-Base"];
+  return context.gasUrl.substring(0, context.gasUrl.indexOf('/gwt/')) + '/gwt/';
 }
 
 function changeModalState(type, toShow) {
