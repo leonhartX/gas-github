@@ -35,9 +35,22 @@ $(() => {
         userLink = `https://bitbucket.org/${user}`;
         tokenLink = `https://bitbucket.org/account/user/${user}/api`;
     } else if(item.scm === 'gitlab') {
+      if (item.baseUrl !== 'https://gitlab.com/api/v4') {
+        let match = item.baseUrl.match(/:\/\/(.*)\/api\/v4/);
+        if (!match || !match[1]) {
+          domain = '';
+          userLink = '';
+          tokenLink = '';
+        } else {
+          domain = `@${match[1]}`;
+          userLink = `https://${match[1]}/${user}`;
+          tokenLink = `https://${match[1]}/profile/personal_access_tokens`;
+        }
+      } else {
         domain = '@gitlab.com';
         userLink = `https://gitlab.com/${user}`;
         tokenLink = `https://gitlab.com/profile/personal_access_tokens`;
+      }
     } else {
         domain = '@Github.com';
         userLink = `https://github.com/${item.user}`;
@@ -117,7 +130,8 @@ function getGitLabParam() {
   const password = $('#gitlab-password').val();
   const personalToken = $('#gitlab-accesstoken').val();
   const tokenType = (personalToken && personalToken.length > 0) ? 'personalToken' : 'oAuth';
-  const baseUrl = 'https://gitlab.com/api/v4';
+  const baseUrl = ($('#gitlab-url').val() || 'https://gitlab.com') + '/api/v4';
+  //const baseUrl = 'https://gitlab.com/api/v4';
   return {
     scm,
     username,
@@ -262,6 +276,7 @@ function loginGitLabOauth(param) {
     headers: headers,
     method: 'POST',
     dataType: 'json',
+    crossDomain: true,
     contentType: 'application/x-www-form-urlencoded',
     data: {
       grant_type: 'password',
