@@ -59,7 +59,7 @@
     "storage",
     "declarativeContent",
     "webRequest",
-    "https://gitlab.com/*"
-
+    "https://gitlab.com/*",
+    "https://*/*"
   ]
 }
