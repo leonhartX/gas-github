@@ -10,12 +10,12 @@ class Gitlab {
     };
     this.accessToken = token.token;
     if(token.type === 'oAuth') {
-      this.tokenParam = 'access_token=' & this.accessToken;
+      this.tokenParam = `access_token=${this.accessToken}`;
       this.tokenHeader = {
         'Authorization': `Bearer ${this.accessToken}`
       };
     } else {
-      this.tokenParam = 'private_token=' & this.accessToken;
+      this.tokenParam = `private_token=${this.accessToken}`;
       this.tokenHeader = {
         'Private-Token': this.accessToken
       };
@@ -102,9 +102,9 @@ class Gitlab {
     context.repo.id = context.repo.id || this.namesToIds.repos[context.repo.fullName];
     return getAllItems(Promise.resolve(
       {
-        token: this.accessToken,
+        tokenParam: this.tokenParam,
         items: [],
-        url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?${this.tokenParam}`
+        url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?per_page=25`
       }),
       this.followPaginate,
       'gitlab'
@@ -125,9 +125,8 @@ class Gitlab {
             return tree.type === 'blob' && re.test(tree.path);
           })
             .map(tree => {
-              var xx = `${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&${this.tokenParam}`;
               return new Promise((resolve, reject) => {
-                $.getJSON(xx, {})
+                $.getJSON(`${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&${this.tokenParam}`, {})
                   .then((content) => {
                     resolve({file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
                   })
@@ -139,12 +138,11 @@ class Gitlab {
   }
 
   getNamespaces() {
-    let testUrl = `${this.baseUrl}/groups?${this.tokenParam}`;
     return getAllItems(Promise.resolve(
       {
-        token: this.accessToken,
+        tokenParam: this.tokenParam,
         items: [],
-        url: testUrl
+        url: `${this.baseUrl}/groups?per_page=25`
       }),
       this.followPaginate,
       'gitlab'
@@ -161,9 +159,9 @@ class Gitlab {
   getRepos() { // Named Projects in gitlab
     return getAllItems(Promise.resolve(
       {
-        token: this.accessToken,
+        tokenParam: this.tokenParam,
         items: [],
-        url: `${this.baseUrl}/users/${this.user}/projects?${this.tokenParam}`
+        url: `${this.baseUrl}/users/${this.user}/projects?per_page=25`
       }),
       this.followPaginate,
       'gitlab'
@@ -261,13 +259,13 @@ class Gitlab {
 
   followPaginate(data) {
     return new Promise((resolve, reject) => {
-      $.getJSON(data.url)
+      $.getJSON(`${data.url}&${data.tokenParm}`)
         .then((response, status, xhr) => {
           data.items = data.items.concat(response);
           const link = xhr.getResponseHeader('Link');
           let url = null;
           if (link) {
-            const match = link.match(/<(.*?)>; rel="next"/);
+            const match = link.match(/<([^ ]*?)>; rel="next"/);
             url = match && match[1] ? match[1] : null;
           }
           resolve({ items: data.items, url: url });
