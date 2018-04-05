@@ -43,6 +43,7 @@ class Github {
         return {file: file.replace(/\.gs$/, context.config.filetype), blob: response};
       })
     });
+    changed.filter(f => !code.gas[f]).forEach((f, i) => changed[i] = f.replace(/\.gs$/, context.config.filetype));
     if (changed.length === 0) {
       showAlert('Nothing to do', LEVEL_WARN);
       return;
