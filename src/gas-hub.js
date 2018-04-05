@@ -288,11 +288,11 @@ function prepareCode() {
   return Promise.all([gas.getGasCode(), scm.getCode()])
   .then((data) => {
     const re = new RegExp(`\\${context.config.filetype}$`);
-    const files = $('.item').toArray().reduce((hash, e) => {
-      if (context.config.manifestEnabled && e.innerText.trim() === 'appsscript.json') {
+    const files = $('.item > .gwt-Label').toArray().reduce((hash, e) => {
+      if (context.config.manifestEnabled && e.title === 'appsscript.json') {
         hash['appsscript'] = 'appsscript.json';
       }
-      const match = e.innerText.trim().match(/(.*?)\.(gs|html)$/);
+      const match = e.title.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) return hash;
       hash[match[1]] = match[0];
       return hash;
