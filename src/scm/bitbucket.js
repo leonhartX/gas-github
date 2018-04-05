@@ -82,7 +82,7 @@ class Bitbucket {
     const files = changed.filter(f => code.gas[f]).map(f => {
       return { name: f.replace(/\.gs$/, context.config.filetype), content: code.gas[f] }
     });
-    const deleteFiles = changed.filter(f => !code.gas[f]);
+    const deleteFiles = changed.filter(f => !code.gas[f]).forEach((f, i) => changed[i] = f.replace(/\.gs$/, context.config.filetype));
     const comment = $('#commit-comment').val();
 
     this.commitFiles(context.repo.fullName, context.branch, null, files, deleteFiles, comment)
