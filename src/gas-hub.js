@@ -292,7 +292,7 @@ function prepareCode() {
       if (context.config.manifestEnabled && e.innerText === 'appsscript.json') {
         hash['appsscript'] = 'appsscript.json';
       }
-      const match = e.innerText.match(/(.*?)\.(gs|html)$/);
+      const match = e.innerText.trim().match(/(.*?)\.(gs|html)?$/);
       if (!match || !match[1] || !match[2]) return hash;
       hash[match[1]] = match[0];
       return hash;
