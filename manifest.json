@@ -1,5 +1,5 @@
 {
-  "version": "3.3.2",
+  "version": "3.3.7",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -29,6 +29,8 @@
         "lib/diff2html.min.js",
         "lib/diff2html-ui.min.js",
         "lib/highlight.min.js",
+        "lib/acorn.js",
+        "lib/acorn_loose.js",
         "src/util.js",
         "src/scm/github.js",
         "src/scm/bitbucket.js",

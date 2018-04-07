@@ -323,6 +323,8 @@ function showDiff(code, type) {
   const newCode = type === 'push' ? code.gas : code.scm;
   const gasFiles = Object.keys(code.gas);
   const scmFiles = Object.keys(code.scm);
+  let clashed = [];
+  const functNames = returnAllFunctionNames(newCode);
   let diff = scmFiles.filter((e) => {
     return gasFiles.indexOf(e) < 0;
   })
@@ -336,6 +338,9 @@ function showDiff(code, type) {
       if (p.test(file)) return false; 
     }
     const match = file.match(/(.*?)\.(gs|html)$/);
+    if(match && functNames.includes(match[1].toLowerCase())){
+      clashed.push(file);
+    }
     return match && match[1] && match[2];
   })
   .reduce((diff, file) => {
@@ -358,12 +363,15 @@ function showDiff(code, type) {
     fileDiff = diffArr.join('\n');
     return diff + fileDiff;
   }, '');
-
+  if(clashed.length > 0){
+    const where = type === 'push' ? 'GAS interface' : scm.constructor.name + ' repository';
+    showAlert("can't have a script with the same name as a function - rename " + clashed.join(',') + ' in ' + where , LEVEL_ERROR);
+    return;
+  }
   if (diff === '') {
     showAlert('Everything already up-to-date', LEVEL_WARN);
     return;
   }
-
   const diffHtml = new Diff2HtmlUI({diff : diff});
   diffHtml.draw('.scm-diff', {inputFormat: 'json', showFiles: false});
   diffHtml.highlightCode('.scm-diff');
@@ -542,6 +550,28 @@ function changeButtonState(type, value) {
     $(`#scm-create-${type}`).prop('disabled', false);
     $(`#new-${type}-name`).css('border-color', '');
   }
+}
+
+function returnAllFunctionNames(code){
+  const functNames = [];
+  Object.keys(code).forEach(thisFile => {
+    if (thisFile !== 'undefined' && thisFile !== 'appsscript.json') {
+      identifyFunctionNames(code[thisFile], functNames)
+    }
+  });
+  return functNames;
+}
+
+function identifyFunctionNames(code,functNames){
+  var tree = acorn.parse_dammit(code);
+  if(tree.body){
+    tree.body.forEach(function(thisEl){
+      if(thisEl.type === "FunctionDeclaration"){
+        functNames.push(thisEl.id.name.toLowerCase());
+      }
+    });
+  }
+
 }
 
 /* show alert using gas ui
