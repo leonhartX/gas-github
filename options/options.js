@@ -28,8 +28,6 @@ $(() => {
     $('.logout-container').show();
     let user = item.user, domain, userLink, tokenLink;
 
-
-
     if(item.scm === 'bitbucket') {
         domain = '@Bitbucket.org';
         userLink = `https://bitbucket.org/${user}`;
@@ -81,14 +79,14 @@ function getGithubParam() {
   const scm = 'github';
   const username = $('#username').val();
   const password = $('#password').val();
-  const personalToken = $('#accesstoken').val();
+  const token = $('#accesstoken').val();
   const baseUrl = `https://api.github.com`;
   const otp = $('#otp').val();
   return {
     scm,
     username,
     password,
-    personalToken,
+    token,
     baseUrl,
     otp
   };
@@ -128,20 +126,18 @@ function getGitLabParam() {
   const scm = 'gitlab';
   const username = $('#gitlab-email').val();
   const password = $('#gitlab-password').val();
-  const personalToken = $('#gitlab-accesstoken').val();
-  const tokenType = (personalToken && personalToken.length > 0) ? 'personalToken' : 'oAuth';
+  const token = $('#gitlab-accesstoken').val();
+  const tokenType = (token && token.length > 0) ? 'personalToken' : 'oAuth';
   const baseUrl = ($('#gitlab-url').val() || 'https://gitlab.com') + '/api/v4';
-  //const baseUrl = 'https://gitlab.com/api/v4';
   return {
     scm,
     username,
     password,
     tokenType,
-    personalToken,
+    token,
     baseUrl
   }
 }
-
 
 function addCred(param) {
   if (param.username === '') {
@@ -152,21 +148,24 @@ function addCred(param) {
   }
 
   if (param.scm === 'bitbucket') return loginBitbucket(param);
-  if (param.scm === 'gitlab' && param.tokenType ==='oAuth') return loginGitLabOauth(param);
-  if (param.scm === 'gitlab' && param.tokenType ==='personalToken') return loginGitLabToken(param);
-  if (param.password !== '' && param.scm === 'github') return loginGithub(param);
-
-  addStar(param.token)
-  .then(() => {
-    chrome.storage.sync.set({scm: param.scm, user: param.username, token: param.token, baseUrl: param.baseUrl}, () => {
-      location.reload();
-    });
-    chrome.storage.local.get('tab', (item) => {
-      if(item.tab) {
-        chrome.tabs.reload(item.tab);
-      }
-    });
-  })
+  if (param.scm === 'gitlab') {
+    if (param.token !== '') return loginGitLabToken(param);
+    return loginGitLabOauth(param); 
+  }
+  if (param.scm === 'github') {
+    if (param.password !== '') return loginGithub(param);
+    addStar(param.token)
+    .then(() => {
+      chrome.storage.sync.set({scm: param.scm, user: param.username, token: param.token, baseUrl: param.baseUrl}, () => {
+        location.reload();
+      });
+      chrome.storage.local.get('tab', (item) => {
+        if(item.tab) {
+          chrome.tabs.reload(item.tab);
+        }
+      });
+    })
+  }
 }
 
 function loginGithub(param) {
@@ -284,60 +283,47 @@ function loginGitLabOauth(param) {
       password: password
     }
   })
-    .done(response => {
-      return $.getJSON(
-        `${baseUrl}/user`,
-        { access_token: response.access_token }
-      )
-        .done(user => {
-          chrome.storage.sync.set({scm: param.scm, user: user.username, token: {type : 'oAuth', token :response.access_token}, baseUrl: baseUrl}, () => {
-            location.reload();
-          });
-          chrome.storage.local.get('tab', (item) => {
-            if(item.tab) {
-              chrome.tabs.reload(item.tab);
-            }
-          });
-        });
-    })
-    .fail(err => {
-      if (err.status == 401 &&
-        err.getResponseHeader('X-GitLab-OTP') !== null &&
-        $('.login-item-otp').filter(':visible').length == 0) {
-        $('.login-item').animate({height: 'toggle', opacity: 'toggle'}, 'slow');
-      } else {
-        $('.error').show();
-      }
-    })
+  .done(response => {
+    return $.getJSON(
+      `${baseUrl}/user`,
+      { access_token: response.access_token }
+    )
+    .done(user => {
+      chrome.storage.sync.set({scm: param.scm, user: user.username, token: {type : 'oAuth', token :response.access_token}, baseUrl: baseUrl}, () => {
+        location.reload();
+      });
+      chrome.storage.local.get('tab', (item) => {
+        if(item.tab) {
+          chrome.tabs.reload(item.tab);
+        }
+      });
+    });
+  })
+  .fail(err => {
+      $('.error').show();
+  })
 }
 
 function loginGitLabToken(param) {
-  const personalToken = param.personalToken;
+  const personalToken = param.token;
   const baseUrl = param.baseUrl;
-  const headers = {};
-$.getJSON(
-        `${baseUrl}/user`,
-        { private_token: personalToken }
-      )
-        .done(user => {
-          chrome.storage.sync.set({scm: param.scm, user: user.username, token: {type : 'personalToken', token :personalToken}, baseUrl: baseUrl}, () => {
-            location.reload();
-          });
-          chrome.storage.local.get('tab', (item) => {
-            if(item.tab) {
-              chrome.tabs.reload(item.tab);
-            }
-          });
-        })
-    .fail(err => {
-      if (err.status == 401 &&
-        err.getResponseHeader('X-GitLab-OTP') !== null &&
-        $('.login-item-otp').filter(':visible').length == 0) {
-        $('.login-item').animate({height: 'toggle', opacity: 'toggle'}, 'slow');
-      } else {
-        $('.error').show();
+  $.getJSON(
+    `${baseUrl}/user`,
+    { private_token: personalToken }
+  )
+  .done(user => {
+    chrome.storage.sync.set({scm: param.scm, user: user.username, token: {type : 'personalToken', token :personalToken}, baseUrl: baseUrl}, () => {
+      location.reload();
+    });
+    chrome.storage.local.get('tab', (item) => {
+      if(item.tab) {
+        chrome.tabs.reload(item.tab);
       }
-    })
+    });
+  })
+  .fail(err => {
+      $('.error').show();
+  })
 }
 
 function logout() {
