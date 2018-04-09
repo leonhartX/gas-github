@@ -80,7 +80,7 @@ class Bitbucket {
   push(code){
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
     const files = changed.filter(f => code.gas[f]).map(f => {
-      return { name: f.replace(/\.gs$/, context.config.filetype), content: code.gas[f] }
+      return { name: f, content: code.gas[f] }
     });
     const deleteFiles = changed.filter(f => !code.gas[f]);
     const comment = $('#commit-comment').val();

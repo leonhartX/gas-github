@@ -289,23 +289,23 @@ function prepareCode() {
   return Promise.all([gas.getGasCode(), scm.getCode()])
   .then((data) => {
     const re = new RegExp(`\\${context.config.filetype}$`);
-    const files = $('.item').toArray().reduce((hash, e) => {
-      if (context.config.manifestEnabled && e.innerText === 'appsscript.json') {
+    const files = $('.item > .gwt-Label').toArray().reduce((hash, e) => {
+      if (context.config.manifestEnabled && e.title === 'appsscript.json') {
         hash['appsscript'] = 'appsscript.json';
       }
-      const match = e.innerText.match(/(.*?)\.(gs|html)$/);
+      const match = e.title.match(/(.*?)\.(gs|html)$/);
       if (!match || !match[1] || !match[2]) return hash;
       hash[match[1]] = match[0];
       return hash;
     }, {});
     const code = {
       gas: data[0].reduce((hash, elem) => {
-        if (elem) hash[files[elem.file]] = elem.content;
+        if (elem) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
         return hash;
       }, {}),
       scm: data[1].reduce((hash, elem) => {
         if (elem) {
-          hash[elem.file.replace(re, '.gs')] = elem.content;
+          hash[elem.file] = elem.content;
         }
         return hash;
       }, {})
@@ -336,7 +336,8 @@ function showDiff(code, type) {
       let p = new RegExp(context.config.ignorePattern[i]);
       if (p.test(file)) return false; 
     }
-    const match = file.match(/(.*?)\.(gs|html)$/);
+    const regex = new RegExp(`(.*?)(${context.config.filetype}|\.html)$`)
+    const match = file.match(regex);
     return match && match[1] && match[2];
   })
   .reduce((diff, file) => {
@@ -517,7 +518,7 @@ function handleGistCreated() {
 }
 
 function getBaseUrl() {
-  return context.gasHeaders["X-GWT-Module-Base"];
+  return context.gasUrl.substring(0, context.gasUrl.indexOf('/gwt/')) + '/gwt/';
 }
 
 function changeModalState(type, toShow) {

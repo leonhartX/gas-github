@@ -40,7 +40,7 @@ class Github {
         data: JSON.stringify(payload)
       })
       .then(response => {
-        return {file: file.replace(/\.gs$/, context.config.filetype), blob: response};
+        return {file: file, blob: response};
       })
     });
     if (changed.length === 0) {
@@ -154,7 +154,7 @@ class Github {
       files: {}
     };
     files.forEach(file => {
-      payload.files[file.replace(/\.gs$/, context.config.filetype)] = {
+      payload.files[file] = {
         content: code.gas[file]
       };
     });
