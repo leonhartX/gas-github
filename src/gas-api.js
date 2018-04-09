@@ -5,7 +5,8 @@ class Gas {
     const changed = $('.diff-file:checked').toArray().map(e => e.value);
     const updatePromises = changed.filter(f => code.scm[f])
     .map((file) => {
-      const match = file.match(/(.*?)\.(gs|html|json)$/);
+      const regex = new RegExp(`(.*?)(${context.config.filetype}|\.json|\.html)$`)
+      const match = file.match(regex);
       if (!match || !match[1] || !match[2]) {
         showAlert('Unsupported file type.', LEVEL_ERROR);
         return;
@@ -30,7 +31,8 @@ class Gas {
 
     const deletePromises = changed.filter(f => !code.scm[f])
     .map((file) => {
-      const match = file.match(/(.*?)\.(gs|html)$/);
+      const regex = new RegExp(`(.*?)(${context.config.filetype}|\.html)$`)
+      const match = file.match(regex);
       if (!match || !match[1] || !match[2]) {
         showAlert('Unknow Error', LEVEL_ERROR);
         return;
