@@ -299,12 +299,12 @@ function prepareCode() {
     }, {});
     const code = {
       gas: data[0].reduce((hash, elem) => {
-        if (elem) hash[files[elem.file]] = elem.content;
+        if (elem) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
         return hash;
       }, {}),
       scm: data[1].reduce((hash, elem) => {
         if (elem) {
-          hash[elem.file.replace(re, '.gs')] = elem.content;
+          hash[elem.file] = elem.content;
         }
         return hash;
       }, {})
@@ -335,7 +335,8 @@ function showDiff(code, type) {
       let p = new RegExp(context.config.ignorePattern[i]);
       if (p.test(file)) return false; 
     }
-    const match = file.match(/(.*?)\.(gs|html)$/);
+    const regex = new RegExp(`(.*?)(${context.config.filetype}|\.html)$`)
+    const match = file.match(regex);
     return match && match[1] && match[2];
   })
   .reduce((diff, file) => {
