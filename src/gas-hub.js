@@ -299,7 +299,7 @@ function prepareCode() {
     }, {});
     const code = {
       gas: data[0].reduce((hash, elem) => {
-        if (elem) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
+        if (elem && files[elem.file]) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
         return hash;
       }, {}),
       scm: data[1].reduce((hash, elem) => {
