@@ -30,7 +30,7 @@ Actually, this is not a login action, but to create the `access token` which wil
 After login, you can bind your GAS Project with repo and branch, or create a new one.
 
 ## 2.3.Manage
-Manage your code with the similar `Push` and `Pull`.But there are somethings you need to know before you use it.
+Manage your code with the similar `Push` and `Pull`.But there are something you need to know before you use it.
 
 ### 2.3.1.Create Repository/Branch
 In `Repo` and `Branch` dropdown list, there is an option to Create new Repo and Branch.
@@ -42,7 +42,8 @@ The **PULL/PUSH** is not actually the same as Github/Bitbucket's **PULL/PUSH**, 
 
 The differences are:
 
-- `Pull` will fetch code form the bind Repository/Branch, and **OVERWRITE** to current GAS Project. There is no merge operation.
+- `Pull` will fetch code from the bind Repository/Branch, and **OVERWRITE** to current GAS Project. There is no merge operation.
+- `Push` will make all your change like one commit, If your want to make your process clearly, please push everytime you want a commit.
 
 Other points:
 - A diff dialog will be shown before you confirm to `Push` or `Pull`.
