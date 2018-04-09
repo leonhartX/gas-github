@@ -31,12 +31,9 @@ class Gitlab {
     return false;
   }
 
-
   commitFiles(repo, branch, parent, newFiles, changedFiles, deleteFiles, comment) {
     return new Promise((resolve, reject) => {
-      let data = {branch: branch,
-        commit_message: comment,
-      actions: []};
+      const data = {branch: branch, commit_message: comment, actions: []};
       if (newFiles && newFiles.length > 0) {
         data.actions = data.actions.concat(newFiles.map((file) => {
           return {
@@ -70,15 +67,15 @@ class Gitlab {
         traditional: true,
         data: JSON.stringify(data)
       })
-        .then(resolve)
-        .fail(reject);
+      .then(resolve)
+      .fail(reject);
     });
   }
 
   push(code) {
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
     const changedFiles = changed.filter(f => code.gas[f]).map(f => {
-      return {name: f.replace(/\.gs$/, context.config.filetype), content: code.gas[f]}
+      return {name: f, content: code.gas[f]}
     });
     const deleteFiles = changed.filter(f => !code.gas[f]);
     const newFileNames = changed.filter(f => !code.scm[f]);
@@ -116,25 +113,25 @@ class Gitlab {
       return $.getJSON(
         `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&recursive=true&${this.tokenParam}`, {}
       )
-        .then(resolve)
-        .fail(reject)
+      .then(resolve)
+      .fail(reject)
     })
-        .then(response => {
-          const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
-          const promises = response.filter((tree) => {
-            return tree.type === 'blob' && re.test(tree.path);
+    .then(response => {
+      const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
+      const promises = response.filter((tree) => {
+        return tree.type === 'blob' && re.test(tree.path);
+      })
+      .map(tree => {
+        return new Promise((resolve, reject) => {
+          $.getJSON(`${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&${this.tokenParam}`, {})
+          .then((content) => {
+            resolve({file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
           })
-            .map(tree => {
-              return new Promise((resolve, reject) => {
-                $.getJSON(`${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&${this.tokenParam}`, {})
-                  .then((content) => {
-                    resolve({file: tree.path, content: decodeURIComponent(escape(atob(content.content)))});
-                  })
-                  .fail(reject)
-              });
-            });
-          return Promise.all(promises);
+          .fail(reject)
         });
+      });
+      return Promise.all(promises);
+    });
   }
 
   getNamespaces() {
@@ -147,13 +144,14 @@ class Gitlab {
       this.followPaginate,
       'gitlab'
     )
-      .then(groups => {
-        this.namespaces = [this.user].concat(groups.map(group => group.name));
-        return this.namespaces;
-      })
-      .catch((err) => {
-        showAlert('Failed to get user info.', LEVEL_ERROR);
-      });
+    .then(groups => {
+      this.namespaces = [this.user].concat(groups.map(group => group.name));
+      this.namesToIds.groups = groups.reduce((obj, item) => (obj[item.name] = item.id, obj), {});
+      return this.namespaces;
+    })
+    .catch((err) => {
+      showAlert('Failed to get user info.', LEVEL_ERROR);
+    });
   }
 
   getRepos() { // Named Projects in gitlab
@@ -161,21 +159,21 @@ class Gitlab {
       {
         tokenParam: this.tokenParam,
         items: [],
-        url: `${this.baseUrl}/users/${this.user}/projects?per_page=25`
+        url: `${this.baseUrl}/projects?per_page=25&membership=true`
       }),
       this.followPaginate,
       'gitlab'
     )
-      .then(response => {
-        this.namesToIds.repos = response.reduce((obj, item) => (obj[item.name] = item.id, obj), {});
-        const repos = Object.keys(this.namesToIds.repos);
-        //if current bind still existed, use it
-        const repo = context.bindRepo[context.id];
-        if (repo && $.inArray(repo.fullName, repos) >= 0) {
-          context.repo = repo;
-        }
-        return repos;
-      });
+    .then(response => {
+      this.namesToIds.repos = response.reduce((obj, item) => (obj[item.path_with_namespace] = item.id, obj), {});
+      const repos = Object.keys(this.namesToIds.repos);
+      //if current bind still existed, use it
+      const repo = context.bindRepo[context.id];
+      if (repo && $.inArray(repo.fullName, repos) >= 0) {
+        context.repo = repo;
+      }
+      return repos;
+    });
   }
 
   createRepo() {
@@ -184,10 +182,13 @@ class Gitlab {
     const desc = $('#new-repo-desc').val();
     const visibility = ($('#new-repo-type').val() !== 'public') ? 'private' : 'public';
     const payload = {
-      name: name,
+      path: name,
       description: desc,
       visibility: visibility
     };
+    if (this.namesToIds.groups[owner]) {
+      payload.namespace_id = this.namesToIds.groups[owner];
+    }
     if (!name || name === '') return;
     return new Promise((resolve, reject) => {
       return $.ajax({
@@ -199,31 +200,31 @@ class Gitlab {
         contentType: 'application/json',
         data: JSON.stringify(payload)
       })
-        .then(resolve)
-        .fail(reject);
+      .then(resolve)
+      .fail(reject);
     })
-      .then(response => {
-        const repo = {
-          fullName: response.name,
-          id: response.id
-        };
-        context.repo = repo;
-        Object.assign(context.bindRepo, {[context.id]: repo});
-        if (context.bindBranch[context.id]) {
-          delete context.bindBranch[context.id];
-        }
-        chrome.storage.sync.set({bindRepo: context.bindRepo});
-        return response.name;
+    .then(response => {
+      const repo = {
+        fullName: response.path_with_namespace,
+        id: response.id
+      };
+      context.repo = repo;
+      Object.assign(context.bindRepo, {[context.id]: repo});
+      if (context.bindBranch[context.id]) {
+        delete context.bindBranch[context.id];
+      }
+      chrome.storage.sync.set({bindRepo: context.bindRepo});
+      return response.path_with_namespace;
+    })
+    .then(repo => {
+      return this.commitFiles(repo, 'master', null, [{name: "README.md", content: "initialed by gas-github"}], null,null, 'initial commit')
+        .then(() => {
+          return repo;
+        });
       })
-      .then(repo => {
-        return this.commitFiles(repo, 'master', null, [{name: "README.md", content: "initialed by gas-github"}], null,null, 'initial commit')
-          .then(() => {
-            return repo;
-          });
-      })
-      .catch((err) => {
-        throw new Error('Failed to create new repository.');
-      });
+    .catch((err) => {
+      throw new Error('Failed to create new repository.');
+    });
   }
 
   createBranch() {
@@ -259,7 +260,7 @@ class Gitlab {
 
   followPaginate(data) {
     return new Promise((resolve, reject) => {
-      $.getJSON(`${data.url}&${data.tokenParm}`)
+      $.getJSON(`${data.url}&${data.tokenParam}`)
         .then((response, status, xhr) => {
           data.items = data.items.concat(response);
           const link = xhr.getResponseHeader('Link');
