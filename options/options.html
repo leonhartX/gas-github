@@ -26,7 +26,7 @@
           </div>
           <button id="login">github login</button>
           <p class="label"><input type="checkbox" name="star" id="star">Star this extension on Github for support</p>
-          <p class="message">Switch to <a name="ghe" href="#">Github Enterprise</a> or <a name="bitbucket" href="#">Bitbucket</a></p>
+          <p class="message">Switch to <a name="ghe" href="#">Github Enterprise</a>, <a name="bitbucket" href="#">Bitbucket</a> or <a name="gitlab" href="#">GitLab</a></p>
           <p class="error" style="display: none">Can not create access token, please check your username and password.</p>
         </div>
         <div class="login-container ghe-login-container">
@@ -43,7 +43,7 @@
           </div>
           <button id="ghe-login">github enterprise login</button>
           <p class="message">Please star this extension on <a href="https://github.com/leonhartX/gas-github">Github</a> for support</p>
-          <p class="message">Switch to <a name="github" href="#">Github</a> or <a name="bitbucket" href="#">Bitbucket</a></p>
+          <p class="message">Switch to <a name="github" href="#">Github</a>, <a name="bitbucket" href="#">Bitbucket</a> or <a name="gitlab" href="#">GitLab</a></p>
           <p class="error" style="display: none">Can not create access token, please check your GHE domain, username and password.</p>
         </div>
 
@@ -54,9 +54,23 @@
           </div>
           <button id="bitbucket-login">bitbucket login</button>
           <p class="message">Please star this extension on <a href="https://github.com/leonhartX/gas-github">Github</a> for support</p>
-          <p class="message">Switch to <a name="github" href="#">Github</a> or <a name="ghe" href="#">Github Enterprise</a></p>
+          <p class="message">Switch to <a name="github" href="#">Github</a>, <a name="ghe" href="#">Github Enterprise</a> or <a name="gitlab" href="#">GitLab</a></p>
           <p class="error" style="display: none">Can not login, please check your username and password.</p>
       </div>
+        <div class="login-container gitlab-login-container">
+          <div class="login-item login-item-basic">
+            <input id="gitlab-url" type="text" value="https://gitlab.com"/>
+            <input id="gitlab-email" type="email" placeholder="email"/>
+            <p class="label">login with password:</p>
+            <input id="gitlab-password" type="password" placeholder="password"/>
+            <p class="label">or personal accessToken(with <b>api</b> scope):</p>
+            <input id="gitlab-accesstoken" type="password" placeholder="access token"/>
+          </div>
+          <button id="gitlab-login">gitlab login</button>
+          <p class="message">Please star this extension on <a href="https://github.com/leonhartX/gas-github">Github</a> for support</p>
+          <p class="message">Switch to <a name="github" href="#">Github</a>, <a name="ghe" href="#">Github Enterprise</a> or <a name="bitbucket" href="#">Bitbucket</a></p>
+          <p class="error" style="display: none">Can not login, please check your username and password.</p>
+        </div>
     </div>
   </body>
 </html>

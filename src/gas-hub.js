@@ -19,6 +19,7 @@ $(() => {
   .then(updateGist)
   .then(initPageEvent)
   .catch((err) => {
+    debugger;
     switch (err.message) {
       case 'need login' :
         initLoginContent();

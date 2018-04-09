@@ -5,14 +5,14 @@
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/rating-count/lfjcgcmkmjjlieihflfhjopckgpelofo.svg)](https://chrome.google.com/webstore/detail/google-apps-script-github/lfjcgcmkmjjlieihflfhjopckgpelofo)
 [![CircleCI](https://img.shields.io/circleci/project/github/leonhartX/gas-github.svg)](https://circleci.com/gh/leonhartX/gas-github)
 
-Chrome-extension to manage Google Apps Script(GAS) code with your favorite SCM service(github/github enterprise/bitbucket).
+Chrome-extension to manage Google Apps Script(GAS) code with your favorite SCM service(github/github enterprise/bitbucket/gitlab).
 
 With this extension, you can manage your code in GAS editor, push code to a new created branch, pull from a repository/branch.
 
-The extension does not use Google Drive API, so you don't need any google authentication. Moreover, this extension support **Bound scripts**.
+The extension does not use the Google Drive API, so you don't need any google authentication. Moreover, this extension supports **Bound scripts**.
 
 # **NOTICE**
-This extension is a hack of the GAS IDE's internal RPC, so there's no guarantee of anything. This extension can broken **ANYTIME** if Google changed their api.
+This extension is a hack of the GAS IDE's internal RPC, so there's no guarantee of anything. This extension can break at **ANYTIME** if Google changes their api.
 
 # 1.Install
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
@@ -21,7 +21,7 @@ Install this extension from [chrome web store](https://chrome.google.com/webstor
 After install, when you open GAS editor, a new button will appear to allow you to login to Github/Github Enterprise/Bitbucket.
 
 ## 2.1.Login
-Login to your Github/Github Enterprise/Bitbucket account, with Two-factor authentication support for Github/Github Enterprise.
+Login to your Github/Github Enterprise/Bitbucket/Gitlab account, with Two-factor authentication support for Github/Github Enterprise.
 
 Actually, this is not a login action, but to create the `access token` which will be used for the extension
 >Note: the access token will be stored in `chrome.storage.sync`(password will not be stored), if you take this as a security hole, pleast **DO NOT** use this extension.
@@ -30,12 +30,12 @@ Actually, this is not a login action, but to create the `access token` which wil
 After login, you can bind your GAS Project with repo and branch, or create a new one.
 
 ## 2.3.Manage
-Manage your code with the similar `Push` and `Pull`.But there are something need to know before use it.
+Manage your code with the similar `Push` and `Pull`.But there are somethings you need to know before you use it.
 
 ### 2.3.1.Create Repository/Branch
 In `Repo` and `Branch` dropdown list, there is an option to Create new Repo and Branch.
 
-New Repo will be created with init, mean's a default README.md.
+New Repo will be created with an init, with a default README.md.
 
 ### 2.3.2.Pull and Push
 The **PULL/PUSH** is not actually the same as Github/Bitbucket's **PULL/PUSH**, because GAS project does not have any git info, so what we can do is limited.
@@ -64,8 +64,8 @@ but you will need to delete the token or revoke Bitbucket's oauth yourself from 
 
 # 3.Features
 
- - Manage code with Github, Github Enterprise and Bitbucket
- - Support embedded script
+ - Manage code with Github, Github Enterprise, Bitbucket and Gitlab
+ - Support embedded scripts
  - Push/Pull code between SCM and GAS
  - Sync code to public/secret Gist
  - Create repo, branch from GAS IDE
@@ -75,9 +75,9 @@ but you will need to delete the token or revoke Bitbucket's oauth yourself from 
  - Add Commit comment when push
  - Support two-factor authentication(Github, Github Enterprise only)
  - Work with directory(with slash in filename)
- - Support Github Organization and Bitbucket Team.
+ - Support Github Organizations, Bitbucket Teams and Gitlab Groups.
  - Google Apps Script native ui
- - Option to change filetype from `.gs` to `.js` when upload to SCM
+ - Option to change filetype from `.gs` to `.js` when uploading to SCM
  - Option to add ignore file pattern.
 
 # 4.Support

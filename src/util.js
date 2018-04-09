@@ -13,6 +13,8 @@ function createSCM(item) {
       return new Github(item.baseUrl, item.user, item.token);
     case 'bitbucket':
       return new Bitbucket(item.baseUrl, item.user, item.token);
+      case 'gitlab':
+          return new Gitlab(item.baseUrl, item.user, item.token);
     default:
       return new Github(item.baseUrl, item.user, item.token);
   }

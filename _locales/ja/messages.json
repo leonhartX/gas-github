@@ -3,6 +3,6 @@
     "message": "Google Apps Script Github アシスタント"
   },
   "appDesc": {
-    "message": "Github/Github Enterprise/BitbucketでGASのインラインコードを管理"
+    "message": "Github/Github Enterprise/Bitbucket/gitlabでGASのインラインコードを管理"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "version": "3.3.7",
+  "version": "4.0.0",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -32,6 +32,7 @@
         "src/util.js",
         "src/scm/github.js",
         "src/scm/bitbucket.js",
+        "src/scm/gitlab.js",
         "src/gas-api.js",
         "src/gas-hub.js"
       ],
@@ -57,6 +58,8 @@
     "https://script.google.com/*",
     "storage",
     "declarativeContent",
-    "webRequest"
+    "webRequest",
+    "https://gitlab.com/*",
+    "https://*/*"
   ]
 }
