@@ -18,10 +18,11 @@ This extension is a hack of the GAS IDE's internal RPC, so there's no guarantee 
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
 
 # 2.Usage
-After install, when you open GAS editor, a new button will appear to allow you to login to GitHub/GitHub Enterprise/Bitbucket.
+After install, when you open GAS editor, a new button will appear to allow you to login to GitHub/GitHub Enterprise/Bitbucket/GitLab.
 
 ## 2.1.Login
 Login to your GitHub/GitHub Enterprise/Bitbucket/GitLab account, with Two-factor authentication support for GitHub/GitHub Enterprise.
+You can also use an existed token for GitHub/GitHub Enterprise/GitLab.
 
 Actually, this is not a login action, but to create the `access token` which will be used for the extension
 >Note: the access token will be stored in `chrome.storage.sync`(password will not be stored), if you take this as a security hole, pleast **DO NOT** use this extension.
