@@ -1,5 +1,5 @@
 {
-  "version": "4.0.1",
+  "version": "4.0.2",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -59,7 +59,6 @@
     "storage",
     "declarativeContent",
     "webRequest",
-    "https://gitlab.com/*",
-    "https://*/*"
+    "https://gitlab.com/*"
   ]
 }
