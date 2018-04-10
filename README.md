@@ -18,10 +18,10 @@ This extension is a hack of the GAS IDE's internal RPC, so there's no guarantee 
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
 
 # 2.Usage
-After install, when you open GAS editor, a new button will appear to allow you to login to Github/Github Enterprise/Bitbucket.
+After install, when you open GAS editor, a new button will appear to allow you to login to GitHub/GitHub Enterprise/Bitbucket.
 
 ## 2.1.Login
-Login to your Github/Github Enterprise/Bitbucket/Gitlab account, with Two-factor authentication support for Github/Github Enterprise.
+Login to your GitHub/GitHub Enterprise/Bitbucket/GitLab account, with Two-factor authentication support for GitHub/GitHub Enterprise.
 
 Actually, this is not a login action, but to create the `access token` which will be used for the extension
 >Note: the access token will be stored in `chrome.storage.sync`(password will not be stored), if you take this as a security hole, pleast **DO NOT** use this extension.
@@ -38,7 +38,7 @@ In `Repo` and `Branch` dropdown list, there is an option to Create new Repo and 
 New Repo will be created with an init, with a default README.md.
 
 ### 2.3.2.Pull and Push
-The **PULL/PUSH** is not actually the same as Github/Bitbucket's **PULL/PUSH**, because GAS project does not have any git info, so what we can do is limited.
+The **PULL/PUSH** is not actually the same as GitHub/Bitbucket's **PULL/PUSH**, because GAS project does not have any git info, so what we can do is limited.
 
 The differences are:
 
@@ -65,7 +65,7 @@ but you will need to delete the token or revoke Bitbucket's oauth yourself from 
 
 # 3.Features
 
- - Manage code with Github, Github Enterprise, Bitbucket and Gitlab
+ - Manage code with GitHub, GitHub Enterprise, Bitbucket and GitLab
  - Support embedded scripts
  - Push/Pull code between SCM and GAS
  - Sync code to public/secret Gist
@@ -74,9 +74,9 @@ but you will need to delete the token or revoke Bitbucket's oauth yourself from 
  - Choose files to pull/push
  - Support file changed/added/deleted/renamed
  - Add Commit comment when push
- - Support two-factor authentication(Github, Github Enterprise only)
+ - Support two-factor authentication(GitHub, GitHub Enterprise only)
  - Work with directory(with slash in filename)
- - Support Github Organizations, Bitbucket Teams and Gitlab Groups.
+ - Support GitHub Organizations, Bitbucket Teams and GitLab Groups.
  - Google Apps Script native ui
  - Option to change filetype from `.gs` to `.js` when uploading to SCM
  - Option to add ignore file pattern.
@@ -87,6 +87,6 @@ please create an issue for any question or bug report.
 # 5.Known issues
 
  - `.gs` file which contains a function with the same name as the file will not work [#18](https://github.com/leonhartX/gas-github/issues/18). (limited by GAS'S RPC)
- - Can not push to a blank repo without a init commit. (limited by Github API)
+ - Can not push to a blank repo without a init commit. (limited by GitHub API)
  
 PS: There is a similar [extension](https://github.com/leonhartX/lambda-github) for sync your AWS lambda code.
