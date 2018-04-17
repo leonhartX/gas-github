@@ -140,7 +140,7 @@ class Gas {
   }
 
   gasCreateFile(file, type) {
-    const typeId = type === 'gs' ? 0 : 2;
+    const typeId = type === context.config.filetype ? 0 : 2;
     const payload = `7|1|7|${getBaseUrl()}\|${context.gasToken}|_|makeNewFile|19|h|${file}|1|2|3|4|2|5|6|7|6|${typeId}|`;
     return new Promise((resolve, reject) => {
       $.ajax({
