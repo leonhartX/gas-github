@@ -108,7 +108,7 @@ class Gas {
       }
       const promises = ids.map((id) => {
         return new Promise((resolve, reject) => {
-          const payload = `7|1|9|${getBaseUrl()}\|${context.gasToken}|_|getFileContent|k|${id}|${context.id}|${context.projectId}|l|1|2|3|4|1|5|5|6|7|8|9|0|0|`;
+          const payload = `7|1|9|${getBaseUrl()}\|${context.gasToken}|_|getFileContent|l|${id}|${context.id}|${context.projectId}|m|1|2|3|4|1|5|5|6|7|8|9|0|0|`;
           $.ajax({
             url: context.gasUrl,
             headers: context.gasHeaders,
@@ -141,7 +141,7 @@ class Gas {
 
   gasCreateFile(file, type) {
     const typeId = type === context.config.filetype ? 0 : 2;
-    const payload = `7|1|7|${getBaseUrl()}\|${context.gasToken}|_|makeNewFile|19|h|${file}|1|2|3|4|2|5|6|7|6|${typeId}|`;
+    const payload = `7|1|7|${getBaseUrl()}\|${context.gasToken}|_|makeNewFile|1a|i|${file}|1|2|3|4|2|5|6|7|6|${typeId}|`;
     return new Promise((resolve, reject) => {
       $.ajax({
         url: context.gasUrl,
@@ -171,7 +171,7 @@ class Gas {
 
   gasUpdateFile(file, code) {
     const escapedCode = code.replace(/\\/g, '\\\\').replace(/\|/g, '\\!');
-    const payload = `7|1|8|${getBaseUrl()}\|${context.gasToken}|_|updateFile|19|${file}||${escapedCode}|1|2|3|4|3|5|5|5|6|7|8|`;
+    const payload = `7|1|8|${getBaseUrl()}\|${context.gasToken}|_|updateFile|1a|${file}||${escapedCode}|1|2|3|4|3|5|5|5|6|7|8|`;
     let headers = context.gasHeaders;
     Object.assign(headers, { 'file-id': context.fileIds[file]});
     return new Promise((resolve, reject) => {
