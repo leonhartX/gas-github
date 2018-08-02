@@ -1,0 +1,53 @@
+ defaults: &defaults
+   machine: true
+   working_directory: ~/gas-github
+
+ version: 2
+ jobs:
+   build:
+     <<: *defaults
+     steps:
+       - checkout
+       - run: source $NVM_DIR/nvm.sh && nvm install 6.1.0
+       - run: source $NVM_DIR/nvm.sh && nvm use 6.1.0
+       - run: npm install --dev
+       - run: bundle install
+       - persist_to_workspace:
+           root: .
+   test:
+     <<: *defaults
+     steps:
+       - attach_to_workspace:
+           at: .
+       - run: danger
+
+   deploy-to-production:
+     <<: *defaults
+     steps:
+       - attach_to_workspace:
+           at: .
+       - run: zip -r gas-github.zip . -x 'node_modules/*' -x '\.*' -x 'circle.yml' -x 'Dangerfile' -x 'Gemfile*'
+       - store_artifacts:
+           path: ./gas-github.zip
+
+ workflows:
+   version: 2
+   build-test:
+     jobs:
+       - build
+       - test:
+           requires:
+             - build
+
+   build-test-deploy:
+     jobs:
+       - build
+       - test:
+           requires:
+             - build
+       - deploy-to-production:
+           requires:
+             - test
+           filters:
+             branches:
+                only: master
