@@ -8,15 +8,13 @@
      <<: *defaults
      steps:
        - checkout
-       - attach_workspace: 
-           at: ~/gas-github
        - run: source $NVM_DIR/nvm.sh && nvm install 6.1.0
        - run: source $NVM_DIR/nvm.sh && nvm use 6.1.0
        - run: npm install --dev
        - run: bundle install
        - persist_to_workspace:
            root: ~/gas-github
-           path:
+           paths:
              - .
    test:
      <<: *defaults
