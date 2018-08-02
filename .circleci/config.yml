@@ -15,7 +15,8 @@
        - run: mkdir workspace
        - persist_to_workspace:
            root: .
-           path: workspace
+           path:
+             - workspace
    test:
      <<: *defaults
      steps:
