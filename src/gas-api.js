@@ -123,7 +123,7 @@ class Gas {
             const codeContent = eval(response.slice(4)).filter((e) => {
               return typeof(e) === 'object';
             })[0];
-            resolve({file : codeContent[codeContent.length - 7], content: codeContent[codeContent.length - 11], id : id });
+            resolve({file : codeContent[codeContent.length - 7], content: codeContent[codeContent.length - 10], id : id });
           })
           .fail(reject);
         })
@@ -171,7 +171,7 @@ class Gas {
 
   gasUpdateFile(file, code) {
     const escapedCode = code.replace(/\\/g, '\\\\').replace(/\|/g, '\\!');
-    const payload = `7|1|8|${getBaseUrl()}\|${context.gasToken}|_|updateFile|1a|${file}||${escapedCode}|1|2|3|4|3|5|5|5|6|7|8|`;
+    const payload = `7|1|7|${getBaseUrl()}\|${context.gasToken}|_|updateFile|1a|${file}|${escapedCode}|1|2|3|4|2|5|5|6|7|`;
     let headers = context.gasHeaders;
     Object.assign(headers, { 'file-id': context.fileIds[file]});
     return new Promise((resolve, reject) => {
