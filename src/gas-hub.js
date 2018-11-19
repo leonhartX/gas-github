@@ -417,6 +417,17 @@ function updateRepo(repos) {
   });
   if (context.repo) {
     $('#scm-bind-repo').text(`Repo: ${context.repo.fullName}`);
+    
+    //highlight current repo in repos list
+    let repoItems = document.getElementsByClassName('scm-item goog-menuitem');
+    for (let i = 0; i < repoItems.length; i++) {
+      let currentItem = repoItems[i];
+      if (context.repo.fullName === currentItem.innerText) {
+         currentItem.style.background = "lightgrey";
+         break;
+      }
+    }
+    
     return context.repo.fullName;
   }
   return null;
