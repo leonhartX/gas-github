@@ -200,8 +200,20 @@ class Github {
   }
 
   getCode() {
-    if (context.gist) return this.getGistCode();
-    return this.getRepoCode();
+    let code;
+    if (context.gist) {
+      code = this.getGistCode();
+    } else {
+      code = this.getRepoCode();
+    }
+    return code.then(code => {
+      return code.reduce((hash, elem) => {
+        if (elem) {
+          hash[elem.file] = elem.content;
+        }
+        return hash;
+      }, {})
+    });
   }
 
   getRepoCode() {
@@ -234,7 +246,7 @@ class Github {
         });
       });
       return Promise.all(promises);
-    });
+    })
   }
 
   getGistCode() {

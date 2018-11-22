@@ -1,5 +1,5 @@
 {
-  "version": "4.0.6",
+  "version": "5.0.0",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -23,7 +23,6 @@
     {
       "matches":["https://script.google.com/*"],
       "js":[
-        "lib/googleapi.js",
         "lib/jquery.min.js",
         "lib/diff.min.js",
         "lib/diff2html.min.js",
@@ -33,7 +32,8 @@
         "src/scm/github.js",
         "src/scm/bitbucket.js",
         "src/scm/gitlab.js",
-        "src/gas-api.js",
+        "src/gas/local-gas.js",
+        "src/gas/script-api.js",
         "src/gas-hub.js"
       ],
       "css":[

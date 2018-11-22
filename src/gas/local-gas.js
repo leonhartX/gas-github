@@ -1,6 +1,6 @@
 'use strict';
 
-class Gas {
+class LocalGas {
   pull(code) {
     const changed = $('.diff-file:checked').toArray().map(e => e.value);
     const updatePromises = changed.filter(f => code.scm[f])
@@ -136,6 +136,21 @@ class Gas {
         return hash;
       }, {});
       return responses;
+    })
+    .then((code) => {
+      const files = $('.item > .gwt-Label').toArray().reduce((hash, e) => {
+        if (context.config.manifestEnabled && e.title === 'appsscript.json') {
+          hash['appsscript'] = 'appsscript.json';
+        }
+        const match = e.title.match(/(.*?)\.(gs|html)$/);
+        if (!match || !match[1] || !match[2]) return hash;
+        hash[match[1]] = match[0];
+        return hash;
+      }, {});
+      return code.reduce((hash, elem) => {
+        if (elem && files[elem.file]) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
+        return hash;
+      }, {});
     })
   }
 

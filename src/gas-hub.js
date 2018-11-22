@@ -1,6 +1,6 @@
 'use strict';
 
-const gas = new Gas();
+let gas;
 let scm;
 let context = {};
 const LEVEL_ERROR = 'warning';
@@ -55,10 +55,17 @@ function initContext() {
       'bindBranch',
       'bindType',
       'bindPattern',
-      'bindConfig'
+      'bindConfig',
+      'accessToken'
     ], (item) => {
       if (!item.token) {
         reject(new Error('need login'));
+      }
+      if (item.accessToken) {
+        gas = new ScriptApi();
+        context.gapiToken = item.accessToken;
+      } else {
+        gas = new LocalGas();
       }
       scm = createSCM(item);
       context.bindRepo = item.bindRepo || {};
@@ -223,6 +230,12 @@ function initPageEvent() {
     changeModalState('config', true);
   });
 
+  $(document).on('click', '#login-google', () => {
+    chrome.runtime.sendMessage({ cmd: 'login', interactive: true }, token => {
+        context.gapiToken = token;
+    })
+  })
+
   $(document).on('click', '#save-config', () => {
     context.config.filetype = $('#filetype').val();
     context.config.manifestEnabled = $('#manage-manifest').prop( "checked" );
@@ -287,29 +300,10 @@ function initPageEvent() {
 function prepareCode() {
   return Promise.all([gas.getGasCode(), scm.getCode()])
   .then((data) => {
-    const re = new RegExp(`\\${context.config.filetype}$`);
-    const files = $('.item > .gwt-Label').toArray().reduce((hash, e) => {
-      if (context.config.manifestEnabled && e.title === 'appsscript.json') {
-        hash['appsscript'] = 'appsscript.json';
-      }
-      const match = e.title.match(/(.*?)\.(gs|html)$/);
-      if (!match || !match[1] || !match[2]) return hash;
-      hash[match[1]] = match[0];
-      return hash;
-    }, {});
-    const code = {
-      gas: data[0].reduce((hash, elem) => {
-        if (elem && files[elem.file]) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
-        return hash;
-      }, {}),
-      scm: data[1].reduce((hash, elem) => {
-        if (elem) {
-          hash[elem.file] = elem.content;
-        }
-        return hash;
-      }, {})
-    }
-    return code;
+    return {
+      gas: data[0],
+      scm: data[1]
+    };
   })
 }
 
@@ -423,8 +417,8 @@ function updateRepo(repos) {
     for (let i = 0; i < repoItems.length; i++) {
       let currentItem = repoItems[i];
       if (context.repo.fullName === currentItem.innerText) {
-         currentItem.style.background = "lightgrey";
-         break;
+        currentItem.style.background = "lightgrey";
+        break;
       }
     }
     
