@@ -23,6 +23,7 @@
     {
       "matches":["https://script.google.com/*"],
       "js":[
+        "lib/googleapi.js",
         "lib/jquery.min.js",
         "lib/diff.min.js",
         "lib/diff2html.min.js",
@@ -55,9 +56,15 @@
   ],
   "permissions": [
     "https://script.google.com/*",
+    "identity",
     "storage",
     "declarativeContent",
     "webRequest",
     "https://gitlab.com/*"
-  ]
+  ],
+  "oauth2": {
+    "client_id": "971735641612-plgfavrj0vhpsd1brvquo4qt7m91ujs6.apps.googleusercontent.com",
+    "scopes":["https://www.googleapis.com/auth/script.projects"]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApkXU5iUw1bq/mTyz8lR4l8jSgZgLAc6udwsO+FpdsisNrpCzy3EyDB52eibE+s+6IycE5G3XEkMMhtZfGOPe0BK3qz7DML1XQ2Q3GChe7rsRbWrQckzYMRwsoS6ogSJGEFccbWpzofKV1lZlc0Tu0SXVglF71b3gioPBU4K4ym1X44axuTeAjak9fqB7ICM8OkvxetenDXE+UN0zv+Y2SY+FdlY2Q2+QD5SDJ1PhydDXn7kAGiIYVzUbVWvmKyT0briT5niBbF+lMqmYeDMRCtzlcdI7ym0WGihx0ckDZJcmDksSMgEpNyzlGaYjx08+UHQ2O7a5nqUcUfUUg6307QIDAQAB"
 }
