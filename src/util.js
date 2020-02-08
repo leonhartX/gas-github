@@ -19,3 +19,17 @@ function createSCM(item) {
       return new Github(item.baseUrl, item.user, item.token);
   }
 }
+
+function getGitHubJSON(url, accessToken, data) {
+  return $.ajax({
+    url: url,
+    headers: {
+      'Authorization': `token ${accessToken}`
+    },
+    method: 'GET',
+    crossDomain: true,
+    dataType: 'json',
+    data: data,
+    contentType: 'application/json'
+  })
+}
