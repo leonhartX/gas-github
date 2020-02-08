@@ -144,7 +144,7 @@ class Github {
         showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
       })
       .catch(err => {
-        showAlert('Failed to push', LEVEL_ERROR);
+        showAlert(`Failed to push: ${err}`, LEVEL_ERROR);
       });
   }
 
@@ -325,7 +325,7 @@ class Github {
         return this.namespaces;
       })
       .catch((err) => {
-        showAlert('Failed to get user info.', LEVEL_ERROR);
+        showAlert(`Failed to get user info: ${err}`, LEVEL_ERROR);
       });
   }
 
