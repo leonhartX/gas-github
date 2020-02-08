@@ -1,0 +1,42 @@
+ defaults: &defaults
+   machine: true
+   working_directory: ~/gas-github
+
+ version: 2
+ jobs:
+   build-and-test:
+     <<: *defaults
+     steps:
+       - checkout
+       - run: source $NVM_DIR/nvm.sh && nvm install 6.1.0
+       - run: source $NVM_DIR/nvm.sh && nvm use 6.1.0
+       - run: npm install --dev
+       - run: bundle install
+       - run: danger
+
+   deploy-to-production:
+     <<: *defaults
+     steps:
+       - checkout
+       - run: zip -r gas-github.zip . -x '\.*' -x 'Dangerfile' -x 'Gemfile*'
+       - store_artifacts:
+           path: ./gas-github.zip
+
+ workflows:
+   version: 2
+   build-test:
+     jobs:
+       - build-and-test
+
+   build-test-deploy:
+     jobs:
+       - build-and-test:
+           filters:
+             branches:
+               only: master
+       - deploy-to-production:
+           requires:
+             - build-and-test
+           filters:
+             branches:
+                only: master
