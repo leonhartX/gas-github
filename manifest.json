@@ -32,7 +32,6 @@
         "src/scm/github.js",
         "src/scm/bitbucket.js",
         "src/scm/gitlab.js",
-        "src/gas/local-gas.js",
         "src/gas/script-api.js",
         "src/gas-hub.js"
       ],
@@ -51,7 +50,6 @@
     "content/alert.html",
     "content/button.html",
     "content/modal.html",
-    "content/menu.html",
     "content/login.html"
   ],
   "permissions": [
