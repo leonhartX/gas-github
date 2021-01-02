@@ -54,6 +54,7 @@
   ],
   "permissions": [
     "https://script.google.com/*",
+    "https://www.googleapis.com/oauth2/v4/token",
     "identity",
     "storage",
     "declarativeContent",

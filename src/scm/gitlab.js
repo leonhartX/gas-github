@@ -65,7 +65,7 @@ class Gitlab {
         }));
       }
       $.ajax({
-          url: `${this.baseUrl}/projects/${context.repo.id}/repository/commits`,
+          url: `${this.baseUrl}/projects/${getRepo().id}/repository/commits`,
           headers: this.tokenHeader,
           contentType: 'application/json',
           method: 'POST',
@@ -95,21 +95,21 @@ class Gitlab {
 
     const comment = $('#commit-comment').val();
 
-    this.commitFiles(context.repo.fullName, context.branch, null, newFiles, updatedFiles, deleteFiles, comment)
+    this.commitFiles(getRepo().fullName, getBranch(), null, newFiles, updatedFiles, deleteFiles, comment)
       .then(() => {
-        showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
+        showLog(`Successfully push to ${getBranch()} of ${getRepo().fullName}`);
       })
       .catch((err) => {
-        showAlert(`Failed to push: ${err}`, LEVEL_ERROR);
+        showLog(`Failed to push: ${err}`, LEVEL_ERROR);
       });
   }
 
   getAllBranches() {
-    context.repo.id = context.repo.id || this.namesToIds.repos[context.repo.fullName];
+    let repoId = getRepo().id || this.namesToIds.repos[getRepo().fullName]; 
     return getAllItems(Promise.resolve({
         tokenParam: this.tokenParam,
         items: [],
-        url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches?per_page=25`
+        url: `${this.baseUrl}/projects/${repoId}/repository/branches?per_page=25`
       }),
       this.followPaginate,
       'gitlab'
@@ -119,19 +119,20 @@ class Gitlab {
   getCode() {
     return new Promise((resolve, reject) => {
         return $.getJSON(
-            `${this.baseUrl}/projects/${context.repo.id}/repository/tree?ref=${context.branch}&recursive=true&${this.tokenParam}`, {}
+            `${this.baseUrl}/projects/${getRepo().id}/repository/tree?ref=${getBranch()}&recursive=true&${this.tokenParam}`, {}
           )
           .then(resolve)
           .fail(reject)
       })
       .then(response => {
-        const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
+        const config = getConfig();
+        const re = new RegExp(`(\\${config.filetype}|\\.html${config.manifestEnabled ? '|^appsscript.json' : ''})$`);
         const promises = response.filter((tree) => {
             return tree.type === 'blob' && re.test(tree.path);
           })
           .map(tree => {
             return new Promise((resolve, reject) => {
-              $.getJSON(`${this.baseUrl}/projects/${context.repo.id}/repository/files/${encodeURIComponent(tree.path)}?ref=${context.branch}&${this.tokenParam}`, {})
+              $.getJSON(`${this.baseUrl}/projects/${getRepo().id}/repository/files/${encodeURIComponent(tree.path)}?ref=${getBranch()}&${this.tokenParam}`, {})
                 .then((content) => {
                   resolve({
                     file: tree.path,
@@ -168,7 +169,7 @@ class Gitlab {
         return this.namespaces;
       })
       .catch((err) => {
-        showAlert('Failed to get user info.', LEVEL_ERROR);
+        showLog('Failed to get user info.', LEVEL_ERROR);
       });
   }
 
@@ -183,21 +184,15 @@ class Gitlab {
       )
       .then(response => {
         this.namesToIds.repos = response.reduce((obj, item) => (obj[item.path_with_namespace] = item.id, obj), {});
-        const repos = Object.keys(this.namesToIds.repos);
-        //if current bind still existed, use it
-        const repo = context.bindRepo[context.id];
-        if (repo && $.inArray(repo.fullName, repos) >= 0) {
-          context.repo = repo;
-        }
-        return repos;
+        return Object.keys(this.namesToIds.repos);
       });
   }
 
   createRepo() {
-    const owner = $('#new-repo-owner').val();
+    const owner = $('#selected-repo-owner').text();
     const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
-    const visibility = ($('#new-repo-type').val() !== 'public') ? 'private' : 'public';
+    const visibility = ($('#selected-repo-type').val() !== 'Public') ? 'private' : 'public';
     const payload = {
       path: name,
       description: desc,
@@ -225,12 +220,11 @@ class Gitlab {
           fullName: response.path_with_namespace,
           id: response.id
         };
-        context.repo = repo;
         Object.assign(context.bindRepo, {
-          [context.id]: repo
+          [getId()]: repo
         });
-        if (context.bindBranch[context.id]) {
-          delete context.bindBranch[context.id];
+        if (context.bindBranch[getId()]) {
+          delete context.bindBranch[getId()];
         }
         chrome.storage.sync.set({
           bindRepo: context.bindRepo
@@ -255,12 +249,12 @@ class Gitlab {
     const branch = $('#new-branch-name').val();
     const payload = {
       branch: branch,
-      ref: context.branch
+      ref: getBranch()
     };
     if (!branch || branch === '') return;
     return new Promise((resolve, reject) => {
         return $.ajax({
-            url: `${this.baseUrl}/projects/${context.repo.id}/repository/branches`,
+            url: `${this.baseUrl}/projects/${getRepo().id}/repository/branches`,
             headers: this.tokenHeader,
             method: 'POST',
             crossDomain: true,
@@ -272,9 +266,8 @@ class Gitlab {
           .fail(reject);
       })
       .then(response => {
-        context.branch = branch;
         Object.assign(context.bindBranch, {
-          [context.id]: branch
+          [getId()]: branch
         });
         chrome.storage.sync.set({
           bindBranch: context.bindBranch

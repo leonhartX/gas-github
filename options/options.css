@@ -1,10 +1,11 @@
 @import url(https://fonts.googleapis.com/css?family=Roboto:300);
 
 .login-page {
-  width: 360px;
+  width: 420px;
   padding: 8% 0 0;
   margin: auto;
 }
+
 .form {
   position: relative;
   z-index: 1;
@@ -15,6 +16,7 @@
   text-align: center;
   box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
 }
+
 .form input {
   font-family: "Roboto", sans-serif;
   outline: 0;
@@ -26,6 +28,7 @@
   box-sizing: border-box;
   font-size: 14px;
 }
+
 .form button {
   font-family: "Roboto", sans-serif;
   text-transform: uppercase;
@@ -40,38 +43,53 @@
   transition: all 0.3 ease;
   cursor: pointer;
 }
-.form button:hover,.form button:active,.form button:focus {
+
+.form button:hover,
+.form button:active,
+.form button:focus {
   background: #43A047;
 }
-.form .message,.form .warning {
+
+.form .message,
+.form .warning {
   margin: 15px 0 0;
   color: #b3b3b3;
   font-size: 12px;
 }
+
 .form .label {
   margin: -5px 0 0;
   color: #838383;
   font-size: 12px;
   text-align: left;
 }
-.form .message a,.form .warning a {
+
+.form .message a,
+.form .warning a {
   color: #4CAF50;
   text-decoration: none;
 }
+
 .form .logout-container {
   display: none;
 }
-.form .ghe-login-container, .form .bitbucket-login-container, .form .gitlab-login-container {
+
+.form .ghe-login-container,
+.form .bitbucket-login-container,
+.form .gitlab-login-container {
   display: none;
 }
+
 .form .error {
   margin: 15px 0 0;
   color: #ee3030;
   font-size: 14px;
 }
+
 .form .login-container .login-item-otp {
   display: none;
 }
+
 .form p input {
   width: 15px;
   margin: 15px 0 0 0;
@@ -79,12 +97,13 @@
 
 
 body {
-  background: #76b852; /* fallback for old browsers */
+  background: #76b852;
+  /* fallback for old browsers */
   background: -webkit-linear-gradient(right, #76b852, #8DC26F);
   background: -moz-linear-gradient(right, #76b852, #8DC26F);
   background: -o-linear-gradient(right, #76b852, #8DC26F);
   background: linear-gradient(to left, #76b852, #8DC26F);
   font-family: "Roboto", sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;      
+  -moz-osx-font-smoothing: grayscale;
 }
