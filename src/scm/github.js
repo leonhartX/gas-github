@@ -48,7 +48,7 @@ class Github {
         })
     });
     if (changed.length === 0) {
-      showAlert('Nothing to do', LEVEL_WARN);
+      showLog('Nothing to do', LEVEL_WARN);
       return;
     }
 
@@ -141,17 +141,17 @@ class Github {
         });
       })
       .then(() => {
-        showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
+        showLog(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
       })
       .catch(err => {
-        showAlert(`Failed to push: ${err}`, LEVEL_ERROR);
+        showLog(`Failed to push: ${err}`, LEVEL_ERROR);
       });
   }
 
   pushToGist(code) {
     const files = $('.diff-file:checked').toArray().map((elem) => elem.value);
     if (files.length === 0) {
-      showAlert('Nothing to do', LEVEL_WARN);
+      showLog('Nothing to do', LEVEL_WARN);
       return;
     }
     const payload = {
@@ -180,10 +180,10 @@ class Github {
         data: JSON.stringify(payload)
       })
       .then(() => {
-        showAlert(`Successfully update gist: ${context.branch}`);
+        showLog(`Successfully update gist: ${context.branch}`);
       })
       .fail(err => {
-        showAlert(`Failed to update: ${err}`, LEVEL_ERROR);
+        showLog(`Failed to update: ${err}`, LEVEL_ERROR);
       });
   }
 
@@ -251,7 +251,7 @@ class Github {
           })
           .map(tree => {
             return new Promise((resolve, reject) => {
-              getGitHubJSON(tree.url, this.accessToken)
+              getGitHubJSON(`${tree.url}?ts=${new Date().getTime()}`, this.accessToken)
                 .then((content) => {
                   resolve({
                     file: tree.path,
@@ -309,7 +309,7 @@ class Github {
       .then(response => {
         const repos = response.map(repo => repo.full_name);
         //if current bind still existed, use it
-        const repo = context.bindRepo[context.id];
+        const repo = context.bindRepo[getId()];
         if (repo && $.inArray(repo.fullName, repos) >= 0) {
           context.repo = repo;
         } else if (context.gist) {
@@ -337,15 +337,15 @@ class Github {
         return this.namespaces;
       })
       .catch((err) => {
-        showAlert(`Failed to get user info: ${err}`, LEVEL_ERROR);
+        showLog(`Failed to get user info: ${err}`, LEVEL_ERROR);
       });
   }
 
   createRepo() {
-    const owner = $('#new-repo-owner').val();
+    const owner = $('#selected-repo-owner').text();
     const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
-    const isPrivate = $('#new-repo-type').val() !== 'public';
+    const isPrivate = $('#selected-repo-type').val() !== 'Public';
     const payload = {
       name: name,
       description: desc,
@@ -375,10 +375,10 @@ class Github {
         };
         context.repo = repo;
         Object.assign(context.bindRepo, {
-          [context.id]: repo
+          [getId()]: repo
         });
-        if (context.bindBranch[context.id]) {
-          delete context.bindBranch[context.id];
+        if (context.bindBranch[getId()]) {
+          delete context.bindBranch[getId()];
         }
         chrome.storage.sync.set({
           bindRepo: context.bindRepo
@@ -422,7 +422,7 @@ class Github {
         const gist = response.id;
         context.branch = gist;
         Object.assign(context.bindBranch, {
-          [context.id]: gist
+          [getId()]: gist
         });
         chrome.storage.sync.set({
           bindBranch: context.bindBranch
@@ -476,7 +476,7 @@ class Github {
       .then(response => {
         context.branch = branch;
         Object.assign(context.bindBranch, {
-          [context.id]: branch
+          [getId()]: branch
         });
         chrome.storage.sync.set({
           bindBranch: context.bindBranch

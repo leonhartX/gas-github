@@ -1,10 +1,20 @@
 'use strict';
+function getId() {
+  const match = window.location.href.match(/https:\/\/script\.google\.com(.*?)\/home\/projects\/([^/]*)\//);
+  if (!match) return null;
+  return match[2];
+}
+
+function getRepo() {
+  const id = getId();
+  return context.bindRepo[id].fullName;
+}
 
 function getAllItems(promise, followMethod, type) {
   return promise.then(followMethod)
-  .then((data) => {
-    return data.url ? getAllItems(Promise.resolve(data), followMethod, type) : data.items;
-  });
+    .then((data) => {
+      return data.url ? getAllItems(Promise.resolve(data), followMethod, type) : data.items;
+    });
 }
 
 function createSCM(item) {

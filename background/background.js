@@ -1,6 +1,6 @@
 "use strict";
 
-let accessToken;
+let googleApiKey;
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
@@ -26,8 +26,10 @@ chrome.runtime.onMessage.addListener((msg, sender, callback) => {
       });
       return;
     case "login":
-      if (accessToken) {
-        chrome.identity.removeCachedAuthToken({token: accessToken}, () => {
+      if (googleApiKey) {
+        chrome.identity.removeCachedAuthToken({
+          token: googleApiKey
+        }, () => {
           auth(msg.interactive, callback);
         })
       } else {
@@ -40,13 +42,15 @@ chrome.runtime.onMessage.addListener((msg, sender, callback) => {
 });
 
 function auth(interactive, callback) {
-  chrome.identity.getAuthToken({interactive: interactive}, function (token) {
+  chrome.identity.getAuthToken({
+    interactive: interactive
+  }, function (token) {
     if (chrome.runtime.lastError) {
       console.log(chrome.runtime.lastError);
       callback(null);
     } else {
       chrome.storage.sync.set({
-        accessToken: token
+        googleApiKey: token
       });
       console.log(`token updated: ${token}`);
       callback(token);

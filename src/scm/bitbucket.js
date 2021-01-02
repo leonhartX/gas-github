@@ -43,7 +43,7 @@ class Bitbucket {
         return response.access_token;
       })
       .catch(err => {
-        showAlert(`Failed to refresh access token: ${err}`, LEVEL_ERROR);
+        showLog(`Failed to refresh access token: ${err}`, LEVEL_ERROR);
       })
   }
 
@@ -92,10 +92,10 @@ class Bitbucket {
 
     this.commitFiles(context.repo.fullName, context.branch, null, files, deleteFiles, comment)
       .then(() => {
-        showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
+        showLog(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
       })
       .catch((err) => {
-        showAlert('Failed to push', LEVEL_ERROR);
+        showLog('Failed to push', LEVEL_ERROR);
       });
   }
 
@@ -177,7 +177,7 @@ class Bitbucket {
         return this.namespaces;
       })
       .catch((err) => {
-        showAlert('Failed to get user info.', LEVEL_ERROR);
+        showLog('Failed to get user info.', LEVEL_ERROR);
       });
   }
 
@@ -196,7 +196,7 @@ class Bitbucket {
       .then(response => {
         const repos = response.map(repo => repo.full_name);
         //if current bind still existed, use it
-        const repo = context.bindRepo[context.id];
+        const repo = context.bindRepo[getId()];
         if (repo && $.inArray(repo.fullName, repos) >= 0) {
           context.repo = repo;
         }
@@ -205,10 +205,10 @@ class Bitbucket {
   }
 
   createRepo() {
-    const owner = $('#new-repo-owner').val();
+    const owner = $('#selected-repo-owner').text();
     const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
-    const isPrivate = $('#new-repo-type').val() !== 'public';
+    const isPrivate = $('#selected-repo-type').val() !== 'Public';
     const payload = {
       scm: 'git',
       description: desc,
@@ -235,10 +235,10 @@ class Bitbucket {
         };
         context.repo = repo;
         Object.assign(context.bindRepo, {
-          [context.id]: repo
+          [getId()]: repo
         });
-        if (context.bindBranch[context.id]) {
-          delete context.bindBranch[context.id];
+        if (context.bindBranch[getId()]) {
+          delete context.bindBranch[getId()];
         }
         chrome.storage.sync.set({
           bindRepo: context.bindRepo
@@ -277,7 +277,7 @@ class Bitbucket {
       .then(() => {
         context.branch = branch;
         Object.assign(context.bindBranch, {
-          [context.id]: branch
+          [getId()]: branch
         });
         chrome.storage.sync.set({
           bindBranch: context.bindBranch

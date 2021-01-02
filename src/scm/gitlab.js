@@ -97,10 +97,10 @@ class Gitlab {
 
     this.commitFiles(context.repo.fullName, context.branch, null, newFiles, updatedFiles, deleteFiles, comment)
       .then(() => {
-        showAlert(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
+        showLog(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
       })
       .catch((err) => {
-        showAlert(`Failed to push: ${err}`, LEVEL_ERROR);
+        showLog(`Failed to push: ${err}`, LEVEL_ERROR);
       });
   }
 
@@ -168,7 +168,7 @@ class Gitlab {
         return this.namespaces;
       })
       .catch((err) => {
-        showAlert('Failed to get user info.', LEVEL_ERROR);
+        showLog('Failed to get user info.', LEVEL_ERROR);
       });
   }
 
@@ -185,7 +185,7 @@ class Gitlab {
         this.namesToIds.repos = response.reduce((obj, item) => (obj[item.path_with_namespace] = item.id, obj), {});
         const repos = Object.keys(this.namesToIds.repos);
         //if current bind still existed, use it
-        const repo = context.bindRepo[context.id];
+        const repo = context.bindRepo[getId()];
         if (repo && $.inArray(repo.fullName, repos) >= 0) {
           context.repo = repo;
         }
@@ -194,10 +194,10 @@ class Gitlab {
   }
 
   createRepo() {
-    const owner = $('#new-repo-owner').val();
+    const owner = $('#selected-repo-owner').text();
     const name = $('#new-repo-name').val();
     const desc = $('#new-repo-desc').val();
-    const visibility = ($('#new-repo-type').val() !== 'public') ? 'private' : 'public';
+    const visibility = ($('#selected-repo-type').val() !== 'Public') ? 'private' : 'public';
     const payload = {
       path: name,
       description: desc,
@@ -227,10 +227,10 @@ class Gitlab {
         };
         context.repo = repo;
         Object.assign(context.bindRepo, {
-          [context.id]: repo
+          [getId()]: repo
         });
-        if (context.bindBranch[context.id]) {
-          delete context.bindBranch[context.id];
+        if (context.bindBranch[getId()]) {
+          delete context.bindBranch[getId()];
         }
         chrome.storage.sync.set({
           bindRepo: context.bindRepo
@@ -274,7 +274,7 @@ class Gitlab {
       .then(response => {
         context.branch = branch;
         Object.assign(context.bindBranch, {
-          [context.id]: branch
+          [getId()]: branch
         });
         chrome.storage.sync.set({
           bindBranch: context.bindBranch
