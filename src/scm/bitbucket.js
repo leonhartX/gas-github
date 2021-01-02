@@ -149,6 +149,14 @@ class Bitbucket {
             });
             return Promise.all(promises);
           });
+      })
+      .then(code => {
+        return code.reduce((hash, elem) => {
+          if (elem) {
+            hash[elem.file] = elem.content;
+          }
+          return hash;
+        }, {})
       });
   }
 

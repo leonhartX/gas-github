@@ -1,5 +1,5 @@
 {
-  "version": "4.0.7",
+  "version": "5.0.0",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -32,7 +32,7 @@
         "src/scm/github.js",
         "src/scm/bitbucket.js",
         "src/scm/gitlab.js",
-        "src/gas-api.js",
+        "src/gas/script-api.js",
         "src/gas-hub.js"
       ],
       "css":[
@@ -50,14 +50,19 @@
     "content/alert.html",
     "content/button.html",
     "content/modal.html",
-    "content/menu.html",
     "content/login.html"
   ],
   "permissions": [
     "https://script.google.com/*",
+    "identity",
     "storage",
     "declarativeContent",
     "webRequest",
     "https://gitlab.com/*"
-  ]
+  ],
+  "oauth2": {
+    "client_id": "971735641612-plgfavrj0vhpsd1brvquo4qt7m91ujs6.apps.googleusercontent.com",
+    "scopes":["https://www.googleapis.com/auth/script.projects"]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApkXU5iUw1bq/mTyz8lR4l8jSgZgLAc6udwsO+FpdsisNrpCzy3EyDB52eibE+s+6IycE5G3XEkMMhtZfGOPe0BK3qz7DML1XQ2Q3GChe7rsRbWrQckzYMRwsoS6ogSJGEFccbWpzofKV1lZlc0Tu0SXVglF71b3gioPBU4K4ym1X44axuTeAjak9fqB7ICM8OkvxetenDXE+UN0zv+Y2SY+FdlY2Q2+QD5SDJ1PhydDXn7kAGiIYVzUbVWvmKyT0briT5niBbF+lMqmYeDMRCtzlcdI7ym0WGihx0ckDZJcmDksSMgEpNyzlGaYjx08+UHQ2O7a5nqUcUfUUg6307QIDAQAB"
 }

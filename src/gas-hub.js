@@ -1,15 +1,11 @@
 'use strict';
 
-const gas = new Gas();
+let gas;
 let scm;
 let context = {};
-const LEVEL_ERROR = 'warning';
-const LEVEL_WARN = 'info';
-const LEVEL_INFO = 'promo';
-const observer = new MutationObserver((e) => {
-  observer.disconnect();
-  $('.scm-alert').remove();
-});
+const LEVEL_ERROR = 'Warning';
+const LEVEL_WARN = 'Info';
+const LEVEL_INFO = 'Notice';
 
 $(() => {
   initPageContent()
@@ -22,6 +18,14 @@ $(() => {
       switch (err.message) {
         case 'need login':
           initLoginContent();
+          break;
+        case 'need auth':
+          auth()
+            .then(initContext)
+            .then(updateRepo)
+            .then(updateBranch)
+            .then(updateGist)
+            .then(initPageEvent)
           break;
         case 'not match':
           break;
@@ -40,9 +44,8 @@ $(() => {
 
 function initContext() {
   context = {};
-  const match = window.location.href.match(/https:\/\/script\.google\.com(.*?)\/d\/([^/]*)\//);
+  const match = window.location.href.match(/https:\/\/script\.google\.com(.*?)\/home\/projects\/([^/]*)\//);
   if (!match) return Promise.reject(new Error('not match'));
-  context.isBound = match[1] === '/macros';
   context.id = match[2];
 
   return new Promise((resolve, reject) => {
@@ -55,11 +58,18 @@ function initContext() {
         'bindBranch',
         'bindType',
         'bindPattern',
-        'bindConfig'
+        'bindConfig',
+        'accessToken'
       ], (item) => {
         if (!item.token) {
           reject(new Error('need login'));
+        } else if (!item.accessToken) {
+          reject(new Error('need auth'));
+        } else {
+          showAlert('Updateing Repository');
         }
+        gas = new ScriptApi();
+        context.gapiToken = item.accessToken;
         scm = createSCM(item);
         context.bindRepo = item.bindRepo || {};
         context.bindBranch = item.bindBranch || {};
@@ -92,13 +102,11 @@ function initContext() {
 function initPageContent() {
   return Promise.all([
       $.get(chrome.runtime.getURL('content/button.html')),
-      $.get(chrome.runtime.getURL('content/menu.html')),
       $.get(chrome.runtime.getURL('content/modal.html'))
     ])
     .then((content) => {
-      $('#functionSelect').after(content[0]);
+      $('.INSTk').before(content[0]);
       $('body').children().last().after(content[1]);
-      $('body').children().last().after(content[2]);
     })
     .then(() => {
       $(document).on('click', '.scm-alert-dismiss', () => {
@@ -113,12 +121,7 @@ function initPageContent() {
 function initLoginContent() {
   $.get(chrome.runtime.getURL('content/login.html'))
     .then((content) => {
-      $('#functionSelect').after(content);
-      $('#login').hover(() => {
-        $('#login').addClass('goog-toolbar-menu-button-hover');
-      }, () => {
-        $('#login').removeClass('goog-toolbar-menu-button-hover');
-      });
+      $('.INSTk').before(content);
       $('#login').click(() => {
         if (chrome.runtime.openOptionsPage) {
           chrome.runtime.openOptionsPage();
@@ -143,7 +146,7 @@ function initPageEvent() {
         container.has(event.target).length === 0 &&
         button.has(event.target).length == 0) {
         container.hide();
-        $(`#${type}Select`).removeClass('goog-toolbar-menu-button-open');
+        $(`#${type}Select`).removeClass('iWO5td');
       }
     });
   });
@@ -153,7 +156,7 @@ function initPageEvent() {
     if (!target.hasClass('scm-item')) {
       target = target.parent('.scm-item');
     }
-    target.addClass('goog-menuitem-highlight');
+    target.addClass('KKjvXb');
   });
 
   $(document).on('mouseleave', '.scm-item', (event) => {
@@ -161,19 +164,14 @@ function initPageEvent() {
     if (!target.hasClass('scm-item')) {
       target = target.parent('.scm-item');
     }
-    target.removeClass('goog-menuitem-highlight');
+    target.removeClass('KKjvXb');
   });
 
   ['repo', 'branch'].forEach((type) => {
-    $(document).on('mouseover', `#${type}Select`, () => {
-      $(`#${type}Select`).addClass('goog-toolbar-menu-button-hover');
-    });
-    $(document).on('mouseleave', `#${type}Select`, () => {
-      $(`#${type}Select`).removeClass('goog-toolbar-menu-button-hover');
-    });
     $(document).on('click', `#${type}Select`, () => {
-      $(`#${type}Select`).toggleClass('goog-toolbar-menu-button-open');
-      $(`.${type}-menu`).css('left', $(`#${type}Select`).position().left + 55).toggle();
+      $(`#${type}Select`).toggleClass('iWO5td')
+      const offset = $("[jsname=enzUi]").width() + 60;
+      $(`.${type}-menu`).css('left', $(`#${type}Select`).position().left + offset).toggle();
     });
   });
 
@@ -203,15 +201,6 @@ function initPageEvent() {
     });
   });
 
-  ['pull', 'push', 'config'].forEach((type) => {
-    $(document).on('mouseover', `#${type}-button`, () => {
-      $(`#${type}-button`).addClass('goog-toolbar-button-hover');
-    });
-    $(document).on('mouseleave', `#${type}-button`, () => {
-      $(`#${type}-button`).removeClass('goog-toolbar-button-hover');
-    });
-  });
-
   ['pull', 'push'].forEach(type => {
     $(document).on('click', `#${type}-button`, () => {
       prepareCode()
@@ -231,6 +220,15 @@ function initPageEvent() {
     changeModalState('config', true);
   });
 
+  $(document).on('click', '#login-google', () => {
+    chrome.runtime.sendMessage({
+      cmd: 'login',
+      interactive: true
+    }, token => {
+      context.gapiToken = token;
+    })
+  })
+
   $(document).on('click', '#save-config', () => {
     context.config.filetype = $('#filetype').val();
     context.config.manifestEnabled = $('#manage-manifest').prop("checked");
@@ -248,15 +246,12 @@ function initPageEvent() {
 
   $(document).on('click', '.scm-item', (event) => {
     let target = $(event.target);
-    if (!target.hasClass('goog-menuitem-content')) {
-      target = target.children();
-    }
     const type = target.attr('scm-content');
     let content;
     let label;
     switch (type) {
       case 'repo':
-        if (context.repo && target.text() === context.repo.fullName) return;
+        if (context.repo && target.attr('data') === context.repo.fullName) return;
         //update context.repo with name and fullName
         const fullName = target.attr('data');
         content = {
@@ -282,10 +277,9 @@ function initPageEvent() {
     chrome.storage.sync.set({
       [bindName]: context[bindName]
     }, () => {
-      $(`#${type}Select`).removeClass('goog-toolbar-menu-button-open');
       $(`.${type}-menu`).hide();
       if (type === 'repo') {
-        $('#scm-bind-repo').text(`Repo: ${label}`);
+        $('#scm-bind-repo').text(label);
         if (content.gist) {
           updateGist();
         } else {
@@ -298,32 +292,25 @@ function initPageEvent() {
   });
 }
 
+function auth() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      cmd: 'login',
+      interactive: true
+    }, token => {
+      context.gapiToken = token;
+      resolve(token);
+    });
+  });
+}
+
 function prepareCode() {
   return Promise.all([gas.getGasCode(), scm.getCode()])
     .then((data) => {
-      const re = new RegExp(`\\${context.config.filetype}$`);
-      const files = $('.item > .gwt-Label').toArray().reduce((hash, e) => {
-        if (context.config.manifestEnabled && e.title === 'appsscript.json') {
-          hash['appsscript'] = 'appsscript.json';
-        }
-        const match = e.title.match(/(.*?)\.(gs|html)$/);
-        if (!match || !match[1] || !match[2]) return hash;
-        hash[match[1]] = match[0];
-        return hash;
-      }, {});
-      const code = {
-        gas: data[0].reduce((hash, elem) => {
-          if (elem && files[elem.file]) hash[files[elem.file].replace(/\.gs$/, context.config.filetype)] = elem.content;
-          return hash;
-        }, {}),
-        scm: data[1].reduce((hash, elem) => {
-          if (elem) {
-            hash[elem.file] = elem.content;
-          }
-          return hash;
-        }, {})
-      }
-      return code;
+      return {
+        gas: data[0],
+        scm: data[1]
+      };
     })
 }
 
@@ -413,7 +400,8 @@ function showDiff(code, type) {
       $('.gist-desc').hide();
     }
   }
-  $('#scm-diff-handler').text(type.capitalize()).off().click(() => {
+  $('#scm-diff-label').text(type.capitalize());
+  $('#scm-diff-handler').off().click(() => {
     changeModalState('diff', false);
     if (type === 'push') {
       scm.push(code);
@@ -425,28 +413,21 @@ function showDiff(code, type) {
 }
 
 function updateRepo(repos) {
-  $('.repo-menu').empty().append('<div class="scm-new-repo scm-item goog-menuitem"><div class="goog-menuitem-content">Create new repo</div></div>');
+  $('.repo-menu').empty().append('<div class="scm-new-repo scm-item MocG8c epDKCb LMgvRb" tabindex="0" role="option"><div class="kRoyt MbhUzd ziS7vd"></div><span class="vRMGwf oJeWuf">Create new repo</span></div>');
   if (scm.canUseGist) {
-    $('.repo-menu').append('<div class="scm-use-gist scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="gist">gist</div></div>');
+    $('.repo-menu').append('<div class="scm-use-gist scm-item MocG8c epDKCb LMgvRb" tabindex="0" role="option"><div class="kRoyt MbhUzd ziS7vd"></div><span class="vRMGwf oJeWuf">gist</span></div>');
   }
 
   repos.forEach((repo) => {
-    let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="repo" data="${repo}">${repo}</div></div>`
+    let content = `<div class="scm-item MocG8c epDKCb LMgvRb" tabindex="-1" role="option" scm-content="repo" data="${repo}"><div class="kRoyt MbhUzd ziS7vd"></div><span class="vRMGwf oJeWuf">${repo}</span></div>`;
     $('.repo-menu').append(content);
   });
+  showAlert("Repository updated");
   if (context.repo) {
-    $('#scm-bind-repo').text(`Repo: ${context.repo.fullName}`);
+    $('#scm-bind-repo').text(context.repo.fullName);
 
     //highlight current repo in repos list
-    let repoItems = document.getElementsByClassName('scm-item goog-menuitem');
-    for (let i = 0; i < repoItems.length; i++) {
-      let currentItem = repoItems[i];
-      if (context.repo.fullName === currentItem.innerText) {
-        currentItem.style.background = "lightgrey";
-        break;
-      }
-    }
-
+    // $(`[data="${context.repo.fullName}"]`).css('background-color', 'lightgray');
     return context.repo.fullName;
   }
   return null;
@@ -487,9 +468,9 @@ function updateBranch() {
   }
   return scm.getAllBranches()
     .then((branches) => {
-      $('.branch-menu').empty().append('<div class="scm-new-branch scm-item goog-menuitem"><div class="goog-menuitem-content">Create new branch</div></div>');
+      $('.branch-menu').empty().append('<div class="scm-new-branch scm-item MocG8c epDKCb LMgvRb" tabindex="0" role="option"><div class="kRoyt MbhUzd ziS7vd"></div><span class="vRMGwf oJeWuf">Create new branch</span></div>');
       branches.forEach((branch) => {
-        let content = `<div class="scm-item goog-menuitem"><div class="goog-menuitem-content" scm-content="branch" data="${branch.name}">${branch.name}</div></div>`
+        let content = `<div class="scm-item MocG8c epDKCb LMgvRb" tabindex="-1" role="option" scm-content="branch" data="${branch.name}"><div class="kRoyt MbhUzd ziS7vd"></div><span class="vRMGwf oJeWuf">${branch.name}</span></div>`;
         $('.branch-menu').append(content);
       });
       let branch = context.bindBranch[context.id];
@@ -503,7 +484,7 @@ function updateBranch() {
       } else if ($.inArray(branch, branches.map(branch => branch.name)) < 0) {
         branch = ($.inArray("master", branches.map(branch => branch.name)) >= 0) ? 'master' : branches[0].name;
       }
-      $('#scm-bind-branch').text(`Branch: ${branch}`);
+      $('#scm-bind-branch').text(branch);
       //update context and storage
       context.branch = branch;
       Object.assign(context.bindBranch, {
@@ -564,11 +545,9 @@ function changeModalState(type, toShow) {
     const width = $('body').width();
     const height = $('body').height();
     const left = (width - margin) / 2;
-    $(`#${type}-modal`).before(`<div class="scm-modal-bg modal-dialog-bg" style="opacity: 0.5; width: ${width}px; height: ${height}px;" aria-hidden="true"></div>`);
-    $(`#${type}-modal`).css('left', left).show();
+    $(`#${type}-modal`).show();
   } else {
     $(`#${type}-modal`).hide();
-    $('.scm-modal-bg').remove();
     $(`#new-${type}-name`).css('border-color', '');
   }
 }
@@ -588,13 +567,12 @@ function changeButtonState(type, value) {
  * but the class is promo. info, warning
  */
 function showAlert(message, level = LEVEL_INFO) {
+
   $.get(chrome.runtime.getURL('content/alert.html'))
     .then((content) => {
-      observer.disconnect();
-      $('#docs-butterbar-container').empty().append(content.replace(/_LEVEL_/g, level).replace(/_MESSAGE_/, message));
-      observer.observe(document.getElementById('docs-butterbar-container'), {
-        childList: true
-      });
+      $("[jsname=cFQkCb]").removeClass("LcqFFc");
+      $("[jsname=cFQkCb] > [jsname=NR4lfb]").css("flex-basis", "150px")
+      $('.Vod31b').html(content.replace(/_TIMESTAMP_/g, new Date().toLocaleTimeString()).replace(/_LEVEL_/g, level).replace(/_MESSAGE_/, message));
     })
 }
 

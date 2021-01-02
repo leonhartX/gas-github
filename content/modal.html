@@ -1,27 +1,76 @@
-<div id="diff-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 180px; display: none;">
-  <div class="modal-dialog-title modal-dialog-title-draggable">
-    <span class="modal-dialog-title-text">Diff</span>
-    <span class="modal-dialog-title-text">(warning, only .gs and .html files will be synced)</span>
-    <span class="scm-diff-modal-close modal-dialog-title-close"></span>
-  </div>
-  <div class="modal-dialog-content">
-    <div class="goog-inline-block" style="width: 600px;">
-      <div class="scm-diff" style="overflow-y: auto; max-height:500px;">
-      </div>
-      <div class="scm-comment" style="border-top-width: 1px; border-top-style: solid; border-top-color: #ccc; padding-top: 12px; margin-top: 12px;">
-        <span class="gwt-InlineLabel">Commit comment: </span>
-        <input id="commit-comment" type="text" class="gwt-TextBox gwt-TextBox-readonly" style="width: 70%;">
-      </div>
-      <div class="gist-desc" style="border-top-width: 1px; border-top-style: solid; border-top-color: #ccc; padding-top: 12px; margin-top: 12px; display: none;">
-        <span class="gwt-InlineLabel">Gist description: </span>
-        <input id="gist-desc" type="text" class="gwt-TextBox gwt-TextBox-readonly" style="width: 70%;">
+<div style="display: none;" id="diff-modal"
+  class="VfPpkd-Sx9Kwc cC1eCc UDxLd PzCPDd xP8Fvd VfPpkd-Sx9Kwc-OWXEXe-FNFY6c">
+  <div tabindex="0" class="pw1uU"></div>
+  <div class="VfPpkd-wzTsW">
+    <div class="VfPpkd-P5QLlc" role="dialog">
+      <span class="VfPpkd-BFbNVe-bF1uUb NZp2ef"></span>
+      <h2 class="VfPpkd-k2Wrsb">Diff</h2>
+      <div class="VfPpkd-cnG4Wd">
+        <div class="IDjiyd">
+          <div class="modal-dialog-content yfxL5b">
+            <div class="KzlEGf">notice: only manifest, script and html files will be synced</div>
+            <div class="goog-inline-block">
+              <div class="scm-diff" style="overflow-y: auto; max-height:500px;">
+              </div>
+              <div class="fF5xed scm-comment">
+                <div class="Ufn6O D3p47c">
+                  <label
+                    class="VfPpkd-fmcmS-yrriRe VfPpkd-fmcmS-yrriRe-OWXEXe-mWPk3d VfPpkd-ksKsZd-mWPk3d VfPpkd-fmcmS-yrriRe-OWXEXe-INsAgc VfPpkd-fmcmS-yrriRe-OWXEXe-V67aGc-NLUYnc cfWmIb orScbe">
+                    <span class="VfPpkd-NSFCdd-i5vt6e VfPpkd-NSFCdd-i5vt6e-OWXEXe-NSFCdd">
+                      <span class="VfPpkd-NSFCdd-Brv4Fb"> </span>
+                      <span class="VfPpkd-NSFCdd-Ra9xwd">
+                        <span
+                          class="VfPpkd-NLUYnc-V67aGc VfPpkd-NLUYnc-V67aGc-OWXEXe-ztc6md VfPpkd-NLUYnc-V67aGc-OWXEXe-TATcMc-KLRBe">
+                          Comment
+                        </span>
+                      </span>
+                      <span class="VfPpkd-NSFCdd-MpmGFe"></span>
+                    </span>
+                    <input type="text" value="" autocomplete="off" id="commit-comment" class="VfPpkd-fmcmS-wGMbrd "
+                      placeholder=" Comment " required=""></label>
+                </div>
+              </div>
+              <div class="fF5xed gist-desc" style="display: none;">
+                <div class="Ufn6O D3p47c">
+                  <label
+                    class="VfPpkd-fmcmS-yrriRe VfPpkd-fmcmS-yrriRe-OWXEXe-mWPk3d VfPpkd-ksKsZd-mWPk3d VfPpkd-fmcmS-yrriRe-OWXEXe-INsAgc VfPpkd-fmcmS-yrriRe-OWXEXe-V67aGc-NLUYnc cfWmIb orScbe">
+                    <span class="VfPpkd-NSFCdd-i5vt6e VfPpkd-NSFCdd-i5vt6e-OWXEXe-NSFCdd">
+                      <span class="VfPpkd-NSFCdd-Brv4Fb"> </span>
+                      <span class="VfPpkd-NSFCdd-Ra9xwd">
+                        <span
+                          class="VfPpkd-NLUYnc-V67aGc VfPpkd-NLUYnc-V67aGc-OWXEXe-ztc6md VfPpkd-NLUYnc-V67aGc-OWXEXe-TATcMc-KLRBe">
+                          Gist description
+                        </span>
+                      </span>
+                      <span class="VfPpkd-NSFCdd-MpmGFe"></span>
+                    </span>
+                    <input type="text" value="" autocomplete="off" id="gist-desc" class="VfPpkd-fmcmS-wGMbrd "
+                      placeholder=" Gist description " required=""></label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="EgwMee">
+            <div class="VfPpkd-dgl2Hf-ppHlrf-sM5MNb scm-diff-modal-close" data-is-touch-wrapper="true"><button
+                class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc hMmmDf">
+                <div class="VfPpkd-Jh9lGc"></div>
+                <span class="scm-diff-modal-close VfPpkd-vQzf8d">Cancel</span>
+                <div class="VfPpkd-RLmnJb"></div>
+              </button></div>
+            <div class="VfPpkd-dgl2Hf-ppHlrf-sM5MNb scm-modal-button" data-is-touch-wrapper="true"><button
+                id="scm-diff-handler"
+                class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc hMmmDf">
+                <div class="VfPpkd-Jh9lGc"></div>
+                <span id="scm-diff-label" class="VfPpkd-vQzf8d"></span>
+                <div class="VfPpkd-RLmnJb"></div>
+              </button></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="scm-modal-button modal-dialog-buttons">
-    <button id="scm-diff-handler" type="button" class="goog-buttonset-default goog-buttonset-action"></button>
-    <button type="button" class="scm-diff-modal-close">Cancel</button>
-  </div>
+  <div class="VfPpkd-IE5DDf"></div>
+  <div tabindex="0" class="pw1uU"></div>
 </div>
 
 <div id="repo-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
@@ -40,28 +89,41 @@
               <th></th>
             </tr>
             <tr class="properties-data-dialog-table-row">
-                <td><div>Owner</div></td>
-                <td><div style="white-space: normal;">
+              <td>
+                <div>Owner</div>
+              </td>
+              <td>
+                <div style="white-space: normal;">
                   <select id="new-repo-owner">
                   </select>
-                </div></td>
-              </tr> 
-            <tr class="properties-data-dialog-table-row">
-              <td><div>Repository Name</div></td>
-              <td><input id="new-repo-name" class="editable-row-input large-input" type="text" placeholder="new-repo-name"></td>
+                </div>
+              </td>
             </tr>
             <tr class="properties-data-dialog-table-row">
-              <td><div>Description</div></td>
+              <td>
+                <div>Repository Name</div>
+              </td>
+              <td><input id="new-repo-name" class="editable-row-input large-input" type="text"
+                  placeholder="new-repo-name"></td>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td>
+                <div>Description</div>
+              </td>
               <td><input id="new-repo-desc" class="editable-row-input large-input" type="text"></td>
             </tr>
             <tr class="properties-data-dialog-table-row">
-              <td><div>Type</div></td>
-              <td><div style="white-space: normal;">
-                <select id="new-repo-type">
-                  <option value="public">Public</option>
-                  <option value="secret">Private</option>
-                </select>
-              </div></td>
+              <td>
+                <div>Type</div>
+              </td>
+              <td>
+                <div style="white-space: normal;">
+                  <select id="new-repo-type">
+                    <option value="public">Public</option>
+                    <option value="secret">Private</option>
+                  </select>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -69,7 +131,8 @@
     </div>
   </div>
   <div class="scm-modal-button modal-dialog-buttons">
-    <button id="scm-create-repo" type="button" class="goog-buttonset-default goog-buttonset-action" disabled="true">Create</button>
+    <button id="scm-create-repo" type="button" class="goog-buttonset-default goog-buttonset-action"
+      disabled="true">Create</button>
     <button type="button" class="scm-repo-modal-close">Cancel</button>
   </div>
 </div>
@@ -90,17 +153,23 @@
               <th></th>
             </tr>
             <tr class="properties-data-dialog-table-row">
-              <td><div>Description</div></td>
+              <td>
+                <div>Description</div>
+              </td>
               <td><input id="new-gist-name" class="editable-row-input large-input" type="text"></td>
             </tr>
             <tr class="properties-data-dialog-table-row">
-              <td><div>Secret</div></td>
-              <td><div style="white-space: normal;">
-                <select id="new-gist-public">
-                  <option value="public">Public</option>
-                  <option value="secret">Secret</option>
-                </select>
-              </div></td>
+              <td>
+                <div>Secret</div>
+              </td>
+              <td>
+                <div style="white-space: normal;">
+                  <select id="new-gist-public">
+                    <option value="public">Public</option>
+                    <option value="secret">Secret</option>
+                  </select>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -108,7 +177,8 @@
     </div>
   </div>
   <div class="scm-modal-button modal-dialog-buttons">
-    <button id="scm-create-gist" type="button" class="goog-buttonset-default goog-buttonset-action" disabled="true">Create</button>
+    <button id="scm-create-gist" type="button" class="goog-buttonset-default goog-buttonset-action"
+      disabled="true">Create</button>
     <button type="button" class="scm-gist-modal-close">Cancel</button>
   </div>
 </div>
@@ -129,8 +199,11 @@
               <th></th>
             </tr>
             <tr class="properties-data-dialog-table-row">
-              <td><div>Branch Name</div></td>
-              <td><input id="new-branch-name" class="editable-row-input large-input" type="text" placeholder="new-branch-name"></td>
+              <td>
+                <div>Branch Name</div>
+              </td>
+              <td><input id="new-branch-name" class="editable-row-input large-input" type="text"
+                  placeholder="new-branch-name"></td>
             </tr>
           </tbody>
         </table>
@@ -138,45 +211,150 @@
     </div>
   </div>
   <div class="scm-modal-button modal-dialog-buttons">
-    <button id="scm-create-branch" type="button" class="goog-buttonset-default goog-buttonset-action" disabled="true">Create</button>
+    <button id="scm-create-branch" type="button" class="goog-buttonset-default goog-buttonset-action"
+      disabled="true">Create</button>
     <button type="button" class="scm-branch-modal-close">Cancel</button>
   </div>
 </div>
 
-<div id="config-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
+<div style="display: none;" id="config-modal"
+  class="VfPpkd-Sx9Kwc cC1eCc UDxLd PzCPDd xP8Fvd VfPpkd-Sx9Kwc-OWXEXe-FNFY6c">
+  <div tabindex="0" class="pw1uU"></div>
+  <div class="VfPpkd-wzTsW">
+    <div class="VfPpkd-P5QLlc" role="dialog">
+      <span class="VfPpkd-BFbNVe-bF1uUb NZp2ef"></span>
+      <h2 class="VfPpkd-k2Wrsb">Config sync options</h2>
+      <div class="VfPpkd-cnG4Wd">
+        <div class="IDjiyd">
+          <div class="fF5xed scm-comment">
+            <div class="scm-config">
+              <table class="properties-data-dialog-table">
+                <tbody>
+                  <tr class="properties-data-dialog-table-header">
+                    <th>Options</th>
+                    <th>Value</th>
+                    <th></th>
+                  </tr>
+                  <tr class="properties-data-dialog-table-row">
+                    <td>
+                      <div>File type to sync</div>
+                    </td>
+                    <td>
+                      <div style="white-space: normal;">
+                        <select id="filetype">
+                          <option value=".gs">.gs</option>
+                          <option value=".js">.js</option>
+                        </select>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr class="properties-data-dialog-table-row">
+                    <td>
+                      <div>Manage manifest file</div>
+                    </td>
+                    <td>
+                      <div style="white-space: normal;">
+                        <input id="manage-manifest" type="checkbox">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr class="properties-data-dialog-table-row">
+                    <td>
+                      <div>Ignore file patterns (regex separated by ';')</div>
+                    </td>
+                    <td><input id="ignore-pattern" class="editable-row-input large-input" type="text"></td>
+                  </tr>
+                  <tr class="properties-data-dialog-table-row">
+                    <td>
+                      <div>Use apps script api</div>
+                    </td>
+                    <td>
+                      <div style="white-space: normal;">
+                        <button id="login-google">login google</button>
+                      </div>
+                    </td>
+                  </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="EgwMee">
+          <div class="VfPpkd-dgl2Hf-ppHlrf-sM5MNb scm-diff-modal-close" data-is-touch-wrapper="true"><button
+              class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-INsAgc VfPpkd-LgbsSe-OWXEXe-dgl2Hf Rj2Mlf OLiIxf PDpWxe P62QJc hMmmDf">
+              <div class="VfPpkd-Jh9lGc"></div>
+              <span class="scm-config-modal-close VfPpkd-vQzf8d">Cancel</span>
+              <div class="VfPpkd-RLmnJb"></div>
+            </button></div>
+          <div class="VfPpkd-dgl2Hf-ppHlrf-sM5MNb scm-modal-button" data-is-touch-wrapper="true"><button
+              id="save-config"
+              class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc hMmmDf">
+              <div class="VfPpkd-Jh9lGc"></div>
+              <span id="scm-diff-label" class="VfPpkd-vQzf8d">Save</span>
+              <div class="VfPpkd-RLmnJb"></div>
+            </button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="VfPpkd-IE5DDf"></div>
+<div tabindex="0" class="pw1uU"></div>
+</div>
+
+<!-- <div id="config-modal" class="modal-dialog" tabindex="0" role="dialog" style="left: 274px; top: 280px; display: none;">
   <div class="modal-dialog-title modal-dialog-title-draggable">
     <span class="modal-dialog-title-text">Config sync options</span>
     <span class="scm-config-modal-close modal-dialog-title-close"></span>
   </div>
   <div class="modal-dialog-content">
-    <div class="goog-inline-block" style="width: 600px; height: 120px;">
+    <div class="goog-inline-block" style="width: 600px; height: 140px;">
       <div class="scm-config">
         <table class="properties-data-dialog-table">
           <tbody>
-          <tr class="properties-data-dialog-table-header">
-            <th>Options</th>
-            <th>Value</th>
-            <th></th>
-          </tr>
-          <tr class="properties-data-dialog-table-row">
-            <td><div>File type to sync</div></td>
-            <td><div style="white-space: normal;">
-              <select id="filetype">
-                <option value=".gs">.gs</option>
-                <option value=".js">.js</option>
-              </select>
-            </div></td>
-          </tr>
-          <tr class="properties-data-dialog-table-row">
-            <td><div>Manage manifest file</div></td>
-            <td><div style="white-space: normal;">
-              <input id="manage-manifest" type="checkbox">
-            </div></td>
-          </tr>
-          <tr class="properties-data-dialog-table-row">
-            <td><div>Ignore file patterns (regex separated by ';')</div></td>
-            <td><input id="ignore-pattern" class="editable-row-input large-input" type="text"></td>
-          </tr>
+            <tr class="properties-data-dialog-table-header">
+              <th>Options</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td>
+                <div>File type to sync</div>
+              </td>
+              <td>
+                <div style="white-space: normal;">
+                  <select id="filetype">
+                    <option value=".gs">.gs</option>
+                    <option value=".js">.js</option>
+                  </select>
+                </div>
+              </td>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td>
+                <div>Manage manifest file</div>
+              </td>
+              <td>
+                <div style="white-space: normal;">
+                  <input id="manage-manifest" type="checkbox">
+                </div>
+              </td>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td>
+                <div>Ignore file patterns (regex separated by ';')</div>
+              </td>
+              <td><input id="ignore-pattern" class="editable-row-input large-input" type="text"></td>
+            </tr>
+            <tr class="properties-data-dialog-table-row">
+              <td>
+                <div>Use apps script api</div>
+              </td>
+              <td>
+                <div style="white-space: normal;">
+                  <button id="login-google">login google</button>
+                </div>
+              </td>
+            </tr>
         </table>
       </div>
     </div>
@@ -185,4 +363,4 @@
     <button id="save-config" type="button" class="goog-buttonset-default goog-buttonset-action">Save</button>
     <button type="button" class="scm-config-modal-close">Cancel</button>
   </div>
-</div>
+</div> -->

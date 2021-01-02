@@ -212,8 +212,20 @@ class Github {
   }
 
   getCode() {
-    if (context.gist) return this.getGistCode();
-    return this.getRepoCode();
+    let code;
+    if (context.gist) {
+      code = this.getGistCode();
+    } else {
+      code = this.getRepoCode();
+    }
+    return code.then(code => {
+      return code.reduce((hash, elem) => {
+        if (elem) {
+          hash[elem.file] = elem.content;
+        }
+        return hash;
+      }, {})
+    });
   }
 
   getRepoCode() {
@@ -427,8 +439,8 @@ class Github {
     if (!branch || branch === '') return;
     return new Promise((resolve, reject) => {
         getGitHubJSON(
-          `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
-          this.accessToken)
+            `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
+            this.accessToken)
           .then(resolve)
           .fail(reject)
       })
@@ -437,8 +449,8 @@ class Github {
           return response.object.sha;
         } else {
           return getGitHubJSON(
-            `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
-            this.accessToken)
+              `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
+              this.accessToken)
             .then(response => {
               return response[0].object.sha;
             })
