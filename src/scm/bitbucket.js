@@ -89,10 +89,10 @@ class Bitbucket {
     });
     const deleteFiles = changed.filter(f => !code.gas[f]);
     const comment = $('#commit-comment').val();
-
-    this.commitFiles(context.repo.fullName, context.branch, null, files, deleteFiles, comment)
+    const repo = getRepo();
+    this.commitFiles(repo.fullName, getBranch(), null, files, deleteFiles, comment)
       .then(() => {
-        showLog(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
+        showLog(`Successfully push to ${getBranch()} of ${repo.fullName}`);
       })
       .catch((err) => {
         showLog('Failed to push', LEVEL_ERROR);
@@ -105,7 +105,7 @@ class Bitbucket {
         return getAllItems(Promise.resolve({
             token: accessToken,
             items: [],
-            url: `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches?access_token=${accessToken}`
+            url: `${this.baseUrl}/repositories/${getRepo().fullName}/refs/branches?access_token=${accessToken}`
           }),
           this.followPaginate,
           'bitbucket'
@@ -117,7 +117,7 @@ class Bitbucket {
     return this.getAccessToken()
       .then(accessToken => {
         return $.getJSON(
-          `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`, {
+          `${this.baseUrl}/repositories/${getRepo().fullName}/refs/branches/${getBranch()}`, {
             access_token: accessToken
           }
         )
@@ -127,7 +127,7 @@ class Bitbucket {
               token: this.accessToken,
               items: [],
               urls: [],
-              url: `${this.baseUrl}/repositories/${context.repo.fullName}/src/${response.target.hash}/?access_token=${this.accessToken}`
+              url: `${this.baseUrl}/repositories/${getRepo().fullName}/src/${response.target.hash}/?access_token=${this.accessToken}`
             }),
             this.followDirectory,
             'bitbucket'
@@ -194,13 +194,7 @@ class Bitbucket {
         );
       })
       .then(response => {
-        const repos = response.map(repo => repo.full_name);
-        //if current bind still existed, use it
-        const repo = context.bindRepo[getId()];
-        if (repo && $.inArray(repo.fullName, repos) >= 0) {
-          context.repo = repo;
-        }
-        return repos;
+        return response.map(repo => repo.full_name);
       });
   }
 
@@ -233,7 +227,6 @@ class Bitbucket {
         const repo = {
           fullName: response.full_name
         };
-        context.repo = repo;
         Object.assign(context.bindRepo, {
           [getId()]: repo
         });
@@ -265,17 +258,16 @@ class Bitbucket {
     return this.getAccessToken()
       .then(() => {
         return $.getJSON(
-          `${this.baseUrl}/repositories/${context.repo.fullName}/refs/branches/${context.branch}`, {
+          `${this.baseUrl}/repositories/${getRepo().fullName}/refs/branches/${getBranch()}`, {
             access_token: this.accessToken
           }
         );
       })
       .then(res => {
         const parent = res.target ? res.target.hash : null;
-        return this.commitFiles(context.repo.fullName, branch, parent, [], null, `create new branch ${branch}`);
+        return this.commitFiles(getRepo().fullName, branch, parent, [], null, `create new branch ${branch}`);
       })
       .then(() => {
-        context.branch = branch;
         Object.assign(context.bindBranch, {
           [getId()]: branch
         });
@@ -317,7 +309,8 @@ class Bitbucket {
           }).map(dir => {
             return `${dir.links.self.href}?access_token=${data.token}`;
           })
-          const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
+          const config = getConfig();
+          const re = new RegExp(`(\\${config.filetype}|\\.html${config.manifestEnabled ? '|^appsscript.json' : ''})$`);
           const files = response.values.filter(src => {
             return src.type === 'commit_file' && re.test(src.path);
           });

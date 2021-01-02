@@ -6,8 +6,23 @@ function getId() {
 }
 
 function getRepo() {
-  const id = getId();
-  return context.bindRepo[id].fullName;
+  return context.bindRepo[getId()];
+}
+
+function getBranch() {
+  return context.bindBranch[getId()];
+}
+
+function getConfig() {
+  return context.bindConfig[getId()];
+}
+
+function isGist() {
+  const repo = getRepo();
+  if(repo) {
+    return repo.gist;
+  }
+  return false;
 }
 
 function getAllItems(promise, followMethod, type) {

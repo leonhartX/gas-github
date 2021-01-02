@@ -18,7 +18,7 @@ class Github {
 
 
   push(code) {
-    if (context.gist) return this.pushToGist(code);
+    if (isGist()) return this.pushToGist(code);
     return this.pushToRepo(code);
   }
 
@@ -30,7 +30,7 @@ class Github {
         encoding: 'utf-8'
       };
       return $.ajax({
-          url: `${this.baseUrl}/repos/${context.repo.fullName}/git/blobs`,
+          url: `${this.baseUrl}/repos/${getRepo().fullName}/git/blobs`,
           headers: {
             'Authorization': `token ${this.accessToken}`
           },
@@ -55,7 +55,7 @@ class Github {
     Promise.all([
         Promise.all(promises),
         getGitHubJSON(
-          `${this.baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
+          `${this.baseUrl}/repos/${getRepo().fullName}/branches/${getBranch()}`,
           this.accessToken)
       ])
       .then(responses => {
@@ -83,7 +83,7 @@ class Github {
           })
           .then(payload => {
             return $.ajax({
-              url: `${this.baseUrl}/repos/${context.repo.fullName}/git/trees`,
+              url: `${this.baseUrl}/repos/${getRepo().fullName}/git/trees`,
               headers: {
                 'Authorization': `token ${this.accessToken}`
               },
@@ -112,7 +112,7 @@ class Github {
           ]
         };
         return $.ajax({
-          url: `${this.baseUrl}/repos/${context.repo.fullName}/git/commits`,
+          url: `${this.baseUrl}/repos/${getRepo().fullName}/git/commits`,
           headers: {
             'Authorization': `token ${this.accessToken}`
           },
@@ -129,7 +129,7 @@ class Github {
           sha: response.sha
         };
         return $.ajax({
-          url: `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
+          url: `${this.baseUrl}/repos/${getRepo().fullName}/git/refs/heads/${getBranch()}`,
           headers: {
             'Authorization': `token ${this.accessToken}`
           },
@@ -141,7 +141,7 @@ class Github {
         });
       })
       .then(() => {
-        showLog(`Successfully push to ${context.branch} of ${context.repo.fullName}`);
+        showLog(`Successfully push to ${getBranch()} of ${getRepo().fullName}`);
       })
       .catch(err => {
         showLog(`Failed to push: ${err}`, LEVEL_ERROR);
@@ -169,7 +169,7 @@ class Github {
       payload.description = $('#gist-desc').val();
     }
     return $.ajax({
-        url: `${this.baseUrl}/gists/${context.branch}`,
+        url: `${this.baseUrl}/gists/${getBranch()}`,
         headers: {
           'Authorization': `token ${this.accessToken}`
         },
@@ -180,7 +180,7 @@ class Github {
         data: JSON.stringify(payload)
       })
       .then(() => {
-        showLog(`Successfully update gist: ${context.branch}`);
+        showLog(`Successfully update gist: ${getBranch()}`);
       })
       .fail(err => {
         showLog(`Failed to update: ${err}`, LEVEL_ERROR);
@@ -204,7 +204,7 @@ class Github {
       Promise.resolve({
         accessToken: this.accessToken,
         items: [],
-        url: `${this.baseUrl}/repos/${context.repo.fullName}/branches`
+        url: `${this.baseUrl}/repos/${getRepo().fullName}/branches`
       }),
       this.followPaginate,
       'github'
@@ -213,7 +213,7 @@ class Github {
 
   getCode() {
     let code;
-    if (context.gist) {
+    if (isGist()) {
       code = this.getGistCode();
     } else {
       code = this.getRepoCode();
@@ -231,21 +231,22 @@ class Github {
   getRepoCode() {
     return new Promise((resolve, reject) => {
         getGitHubJSON(
-            `${this.baseUrl}/repos/${context.repo.fullName}/branches/${context.branch}`,
+            `${this.baseUrl}/repos/${getRepo().fullName}/branches/${getBranch()}`,
             this.accessToken)
           .then(resolve)
           .fail(reject);
       })
       .then(response => {
         return getGitHubJSON(
-          `${this.baseUrl}/repos/${context.repo.fullName}/git/trees/${response.commit.commit.tree.sha}`,
+          `${this.baseUrl}/repos/${getRepo().fullName}/git/trees/${response.commit.commit.tree.sha}`,
           this.accessToken, {
             recursive: 1
           }
         );
       })
       .then(response => {
-        const re = new RegExp(`(\\${context.config.filetype}|\\.html${context.config.manifestEnabled ? '|^appsscript.json' : ''})$`);
+        const config = getConfig();
+        const re = new RegExp(`(\\${config.filetype}|\\.html${config.manifestEnabled ? '|^appsscript.json' : ''})$`);
         const promises = response.tree.filter((tree) => {
             return tree.type === 'blob' && re.test(tree.path);
           })
@@ -267,7 +268,7 @@ class Github {
 
   getGistCode() {
     return new Promise((resolve, reject) => {
-        getGitHubJSON(`${this.baseUrl}/gists/${context.branch}`, this.accessToken)
+        getGitHubJSON(`${this.baseUrl}/gists/${getBranch()}`, this.accessToken)
           .then(resolve)
           .fail(reject);
       })
@@ -308,15 +309,12 @@ class Github {
       )
       .then(response => {
         const repos = response.map(repo => repo.full_name);
-        //if current bind still existed, use it
-        const repo = context.bindRepo[getId()];
-        if (repo && $.inArray(repo.fullName, repos) >= 0) {
-          context.repo = repo;
-        } else if (context.gist) {
-          context.repo = {
-            fullName: 'gist',
-            gist: true
-          }
+        const repo = getRepo();
+        if (repo && !repo.gist && !($.inArray(repo.fullName, repos) >= 0)) {
+          delete context.bindRepo[getId()];
+          chrome.storage.sync.set({
+            bindRepo: context.bindRepo
+          });
         }
         return repos;
       });
@@ -373,7 +371,6 @@ class Github {
         const repo = {
           fullName: response.full_name
         };
-        context.repo = repo;
         Object.assign(context.bindRepo, {
           [getId()]: repo
         });
@@ -420,7 +417,6 @@ class Github {
       })
       .then(response => {
         const gist = response.id;
-        context.branch = gist;
         Object.assign(context.bindBranch, {
           [getId()]: gist
         });
@@ -439,7 +435,7 @@ class Github {
     if (!branch || branch === '') return;
     return new Promise((resolve, reject) => {
         getGitHubJSON(
-            `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads/${context.branch}`,
+            `${this.baseUrl}/repos/${getRepo().fullName}/git/refs/heads/${getBranch()}`,
             this.accessToken)
           .then(resolve)
           .fail(reject)
@@ -449,7 +445,7 @@ class Github {
           return response.object.sha;
         } else {
           return getGitHubJSON(
-              `${this.baseUrl}/repos/${context.repo.fullName}/git/refs/heads`,
+              `${this.baseUrl}/repos/${getRepo().fullName}/git/refs/heads`,
               this.accessToken)
             .then(response => {
               return response[0].object.sha;
@@ -462,7 +458,7 @@ class Github {
           sha: sha
         };
         return $.ajax({
-          url: `${this.baseUrl}/repos/${context.repo.fullName}/git/refs`,
+          url: `${this.baseUrl}/repos/${getRepo().fullName}/git/refs`,
           headers: {
             'Authorization': `token ${this.accessToken}`
           },
@@ -474,7 +470,6 @@ class Github {
         });
       })
       .then(response => {
-        context.branch = branch;
         Object.assign(context.bindBranch, {
           [getId()]: branch
         });

@@ -105,11 +105,6 @@ function initContext() {
         context.bindType = item.bindType || {};
         context.bindPattern = item.bindPattern || {};
         context.bindConfig = item.bindConfig || {};
-        context.config = context.bindConfig[id] || {};
-        context.config.filetype = context.config.filetype || context.bindType[id] || '.gs';
-        context.config.ignorePattern = context.config.ignorePattern || context.bindPattern[id] || [];
-        context.config.manifestEnabled = context.config.manifestEnabled || false;
-        context.gist = context.bindRepo[id] && context.bindRepo[id].gist;
         resolve(scm);
       });
     })
@@ -125,7 +120,7 @@ function initContext() {
             $('#repo-owner-list').append(content);
             if (first) {
               $('#selected-repo-owner').text(owner);
-              first =false;
+              first = false;
             }
           });
           return scm;
@@ -254,9 +249,19 @@ function initPageEvent() {
   })
 
   $(document).on('click', '#config-button', () => {
-    $('#filetype').text(context.config.filetype);
-    $('#manage-manifest').prop("checked", context.config.manifestEnabled);
-    $('#ignore-pattern').val(context.config.ignorePattern.join(';'));
+    let config = getConfig();
+    if (!config) {
+      config = {
+        filetype: '.gs',
+        ignorePattern: [],
+        manifestEnabled: true,
+      }
+    }
+    if (config) {
+      $('#selected-suffix').text(config.filetype);
+      $('#manage-manifest').prop("checked", config.manifestEnabled);
+      $('#ignore-pattern').val(config.ignorePattern.join(';'));
+    }
     changeModalState('config', true);
   });
 
@@ -274,10 +279,12 @@ function initPageEvent() {
   })
 
   $(document).on('click', '#save-config', () => {
-    context.config.filetype = $('#filetype').text();
-    context.config.manifestEnabled = $('#manage-manifest').prop("checked");
-    context.config.ignorePattern = $('#ignore-pattern').val().split(';').filter(p => p !== '');
-    context.bindConfig[getId()] = context.config;
+    const config = {
+      filetype: $('#selected-suffix').text(),
+      manifestEnabled: $('#manage-manifest').prop("checked"),
+      ignorePattern: $('#ignore-pattern').val().split(';').filter(p => p !== '')
+    }
+    context.bindConfig[getId()] = config;
     try {
       chrome.storage.sync.set({
         bindConfig: context.bindConfig
@@ -298,25 +305,22 @@ function initPageEvent() {
     let label;
     switch (type) {
       case 'repo':
-        if (getRepo() && target.attr('data') === context.repo.fullName) return;
-        //update context.repo with name and fullName
+        if (getRepo() && target.attr('data') === getRepo().fullName) return;
         const fullName = target.attr('data');
         content = {
           fullName: fullName,
           gist: fullName === 'gist'
         }
         label = fullName;
-        context.gist = content.gist;
         break;
       case 'branch':
-        if (context[type] && target.text() === context[type]) return;
+        if (getBranch() && target.text() === getBranch()) return;
         content = target.attr('data');
         label = target.attr('data');
         break;
       default:
         return;
     }
-    context[type] = content;
     const bindName = `bind${type.capitalize()}`;
     Object.assign(context[bindName], {
       [getId()]: content
@@ -378,14 +382,15 @@ function showDiff(code, type) {
     })
     .concat(gasFiles)
     .filter(file => {
-      if (context.config.manifestEnabled && file === 'appsscript.json') {
+      const config = getConfig();
+      if (config.manifestEnabled && file === 'appsscript.json') {
         return true;
       }
-      for (let i = 0; i < context.config.ignorePattern.length; i++) {
-        let p = new RegExp(context.config.ignorePattern[i]);
-        if (p.test(file)) return false;
+      for (let i = 0; i < config.ignorePattern.length; i++) {
+        let p = new RegExp(svconfig.ignorePattern[i]);
+        if (svp.test(file)) return false;
       }
-      const regex = new RegExp(`(.*?)(${context.config.filetype}|\.html)$`)
+      const regex = new RegExp(`(.*?)(${context.bindConfig[getId()].filetype}|\.html)$`)
       const match = file.match(regex);
       return match && match[1] && match[2];
     })
@@ -434,7 +439,7 @@ function showDiff(code, type) {
     $('#scm-diff-handler').prop('disabled', true);
     $('.scm-comment').hide();
   } else {
-    if (type === 'push' && !context.gist) { //push to repo must have commit comment
+    if (type === 'push' && !isGist()) { //push to repo must have commit comment
       $('.scm-comment').show();
       $('.gist-desc').hide();
       $('#scm-diff-handler').prop('disabled', true);
@@ -472,18 +477,16 @@ function updateRepo(repos) {
     $('.repo-menu').append(content);
   });
   showLog("Repository updated");
-  if (context.repo) {
-    $('#scm-bind-repo').text(context.repo.fullName);
-
-    //highlight current repo in repos list
-    // $(`[data="${context.repo.fullName}"]`).css('background-color', 'lightgray');
-    return context.repo.fullName;
+  const repo = getRepo();
+  if (repo) {
+    $('#scm-bind-repo').text(repo.fullName);
+    return repo.fullName;
   }
   return null;
 }
 
 function updateGist() {
-  if (!context.gist) {
+  if (!isGist()) {
     return null;
   }
   return scm.getAllGists()
@@ -500,7 +503,6 @@ function updateGist() {
       }
       $('#scm-bind-branch').text(gist);
       //update context and storage
-      context.branch = gist;
       Object.assign(context.bindBranch, {
         [getId()]: gist
       });
@@ -512,7 +514,7 @@ function updateGist() {
 }
 
 function updateBranch() {
-  if (!context.repo || context.gist) {
+  if (!getRepo() || isGist()) {
     return null;
   }
   return scm.getAllBranches()
@@ -535,7 +537,6 @@ function updateBranch() {
       }
       $('#scm-bind-branch').text(branch);
       //update context and storage
-      context.branch = branch;
       Object.assign(context.bindBranch, {
         [getId()]: branch
       });

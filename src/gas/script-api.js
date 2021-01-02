@@ -4,6 +4,7 @@ const API_URL = "https://script.googleapis.com/v1/projects";
 
 class ScriptApi {
   pull(code) {
+    const config = getConfig();
     const changed = $('.diff-file:checked').toArray().map(elem => elem.value);
     const updatedFiles = changed.filter(f => code.scm[f]).map(f => {
       const suffix = f.substr(f.lastIndexOf("."));
@@ -16,7 +17,7 @@ class ScriptApi {
         case ".json":
           type = "JSON";
           break;
-        case context.config.filetype:
+        case config.filetype:
           type = "SERVER_JS";
           break;
       }
@@ -40,7 +41,7 @@ class ScriptApi {
           case ".json":
             type = "JSON";
             break;
-          case context.config.filetype:
+          case config.filetype:
             type = "SERVER_JS";
             break;
         }
@@ -102,7 +103,7 @@ class ScriptApi {
                 type = ".json"
                 break;
               case "SERVER_JS":
-                type = context.config.filetype
+                type = getConfig().filetype
                 break;
             }
             hash[elem.name + type] = elem.source;
