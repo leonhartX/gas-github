@@ -77,6 +77,9 @@ $(() => {
       $('#login-user').text(`${user}${domain}`).attr('href', userLink);
       $('#token').attr('href', tokenLink);
     })
+    .then(() => {
+      auth();
+    })
     .catch(err => {
       //not logged in
     })
@@ -412,7 +415,7 @@ function loginGitLabToken(param) {
 }
 
 function logout() {
-  chrome.storage.sync.remove(['scm', 'token', 'user', 'baseUrl', 'googleApiKey'], () => {
+  chrome.storage.sync.remove(['scm', 'token', 'user', 'baseUrl', 'gapiToken', 'gapiRefreshToken'], () => {
     location.reload();
   });
   chrome.storage.local.get('tab', (item) => {
@@ -447,4 +450,22 @@ function addStar(token) {
       })
       .always(resolve);
   })
+}
+
+function auth() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      cmd: 'login',
+      interactive: true
+    }, token => {
+      if (token == null) {
+        reject("can not get oauth token, currently only support Chrome");
+      } else {
+        chrome.storage.sync.set({
+          "gapiToken": token
+        }); 
+        resolve(token);
+      }
+    });
+  });
 }
