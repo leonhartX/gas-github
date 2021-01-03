@@ -28,6 +28,7 @@ You can also use an existed token for GitHub/GitHub Enterprise/GitLab.
 
 Actually, this is not a login action, but to create the `access token` which will be used for the extension
 >Note: the access token will be stored in `chrome.storage.sync`(password will not be stored), if you take this as a security hole, pleast **DO NOT** use this extension.
+
 > after 5.0.0, you will also need to provide a google oauth token, you can grant the permission with the `Grant Google oauth token` link in login menu, or leave it empty to use the permission of the Chrome login user(only enable for chrome, for other browser like vivaldi, you must follow the link)
 
 
