@@ -142,7 +142,7 @@ class ScriptApi {
         const payload = {
           refresh_token: context.gapiRefreshToken,
           client_id: "971735641612-am059p55sofdp30p2t4djecn72l6kmpf.apps.googleusercontent.com",
-          client_secret: "epw3f_WvEn0Uwqi6kE7DBQl7",
+          client_secret: __SECRET__,
           redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
           grant_type: "refresh_token",
         }

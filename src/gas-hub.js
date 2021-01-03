@@ -49,6 +49,9 @@ function load() {
             .then(updateBranch)
             .then(updateGist)
             .then(initPageEvent)
+            .catch((err) => {
+              showLog(err, LEVEL_ERROR);
+            })
           break;
         case 'not match':
           break;
@@ -342,8 +345,15 @@ function auth() {
       cmd: 'login',
       interactive: true
     }, token => {
-      context.gapiToken = token;
-      resolve(token);
+      if (token == null) {
+        reject("can not get oauth token, currently only support Chrome");
+      } else {
+        context.gapiToken = token;
+        chrome.storage.sync.set({
+          "gapiToken": token
+        }); 
+        resolve(token);
+      }
     });
   });
 }

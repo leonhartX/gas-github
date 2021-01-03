@@ -77,6 +77,9 @@ $(() => {
       $('#login-user').text(`${user}${domain}`).attr('href', userLink);
       $('#token').attr('href', tokenLink);
     })
+    .then(() => {
+      auth();
+    })
     .catch(err => {
       //not logged in
     })
@@ -86,7 +89,8 @@ function getGithubParam() {
   const scm = 'github';
   const username = $('#username').val();
   const token = $('#accesstoken').val();
-  const apiKey = $('#api-key').val();
+  // const apiKey = $('#api-key').val();
+  const apiKey = null;
   const baseUrl = `https://api.github.com`;
   const otp = $('#otp').val();
   return {
@@ -104,7 +108,8 @@ function getGHEParam() {
   const username = $('#ghe-username').val();
   const password = $('#ghe-password').val();
   const token = $('#ghe-accesstoken').val();
-  const apiKey = $('#ghe-api-key').val();
+  // const apiKey = $('#ghe-api-key').val();
+  const apiKey = null;
   const baseUrl = $('#ghe-url').val() + '/api/v3';
   const otp = $('#ghe-otp').val();
   return {
@@ -122,7 +127,8 @@ function getBitbucketParam() {
   const scm = 'bitbucket';
   const username = $('#bitbucket-email').val();
   const password = $('#bitbucket-password').val();
-  const apiKey = $('#bitbucket-api-key').val();
+  // const apiKey = $('#bitbucket-api-key').val();
+  const apiKey = null;
   const baseUrl = `https://api.bitbucket.org/2.0`;
   return {
     scm,
@@ -139,7 +145,8 @@ function getGitLabParam() {
   const password = $('#gitlab-password').val();
   const token = $('#gitlab-accesstoken').val();
   const tokenType = (token && token.length > 0) ? 'personalToken' : 'oAuth';
-  const apiKey = $('#gitlab-api-key').val();
+  // const apiKey = $('#gitlab-api-key').val();
+  const apiKey = null;
   const baseUrl = ($('#gitlab-url').val() || 'https://gitlab.com') + '/api/v4';
   return {
     scm,
@@ -164,7 +171,7 @@ function addCred(param) {
     const payload = {
       code: param.apiKey,
       client_id: "971735641612-am059p55sofdp30p2t4djecn72l6kmpf.apps.googleusercontent.com",
-      client_secret: "epw3f_WvEn0Uwqi6kE7DBQl7",
+      client_secret: __SECRET__,
       redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
       grant_type: "authorization_code",
       access_type: "offline"
@@ -408,7 +415,7 @@ function loginGitLabToken(param) {
 }
 
 function logout() {
-  chrome.storage.sync.remove(['scm', 'token', 'user', 'baseUrl', 'googleApiKey'], () => {
+  chrome.storage.sync.remove(['scm', 'token', 'user', 'baseUrl', 'gapiToken', 'gapiRefreshToken'], () => {
     location.reload();
   });
   chrome.storage.local.get('tab', (item) => {
@@ -443,4 +450,22 @@ function addStar(token) {
       })
       .always(resolve);
   })
+}
+
+function auth() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      cmd: 'login',
+      interactive: true
+    }, token => {
+      if (token == null) {
+        reject("can not get oauth token, currently only support Chrome");
+      } else {
+        chrome.storage.sync.set({
+          "gapiToken": token
+        }); 
+        resolve(token);
+      }
+    });
+  });
 }
