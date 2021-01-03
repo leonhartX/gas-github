@@ -14,7 +14,15 @@ function getBranch() {
 }
 
 function getConfig() {
-  return context.bindConfig[getId()];
+  let config = context.bindConfig[getId()];
+  if (!config) {
+    config = {
+      filetype: '.gs',
+      ignorePattern: [],
+      manifestEnabled: true,
+    }
+  }
+  return config;
 }
 
 function isGist() {

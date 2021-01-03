@@ -55,11 +55,10 @@
   "permissions": [
     "https://script.google.com/*",
     "https://www.googleapis.com/oauth2/v4/token",
+    "https://gitlab.com/*",
     "identity",
     "storage",
-    "declarativeContent",
-    "webRequest",
-    "https://gitlab.com/*"
+    "webRequest"
   ],
   "oauth2": {
     "client_id": "971735641612-plgfavrj0vhpsd1brvquo4qt7m91ujs6.apps.googleusercontent.com",
