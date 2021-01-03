@@ -13,6 +13,8 @@ The extension does not use the Google Drive API, so you don't need any google au
 
 # **NOTICE**
 This extension is a hack of the GAS IDE's internal RPC, so there's no guarantee of anything. This extension can break at **ANYTIME** if Google changes their api.
+> after 5.0.0, this is using Google Apps Scrips API now so it should be more stable
+
 
 # 1.Install
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
@@ -26,6 +28,8 @@ You can also use an existed token for GitHub/GitHub Enterprise/GitLab.
 
 Actually, this is not a login action, but to create the `access token` which will be used for the extension
 >Note: the access token will be stored in `chrome.storage.sync`(password will not be stored), if you take this as a security hole, pleast **DO NOT** use this extension.
+> after 5.0.0, you will also need to provide a google oauth token, you can grant the permission with the `Grant Google oauth token` link in login menu, or leave it empty to use the permission of the Chrome login user(only enable for chrome, for other browser like vivaldi, you must follow the link)
+
 
 ## 2.2.Bind
 After login, you can bind your GAS Project with repo and branch, or create a new one.
@@ -87,7 +91,8 @@ please create an issue for any question or bug report.
 
 # 5.Known issues
 
- - `.gs` file which contains a function with the same name as the file will not work [#18](https://github.com/leonhartX/gas-github/issues/18). (limited by GAS'S RPC)
+ - (Fixed after 5.0.0) `.gs` file which contains a function with the same name as the file will not work [#18](https://github.com/leonhartX/gas-github/issues/18). (limited by GAS'S RPC)
+ - (Fixed after 5.0.0) Can not work with more than one IDE tab in same browser
  - Can not push to a blank repo without a init commit. (limited by GitHub API)
  
 PS: There is a similar [extension](https://github.com/leonhartX/lambda-github) for sync your AWS lambda code.
