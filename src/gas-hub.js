@@ -250,18 +250,9 @@ function initPageEvent() {
 
   $(document).on('click', '#config-button', () => {
     let config = getConfig();
-    if (!config) {
-      config = {
-        filetype: '.gs',
-        ignorePattern: [],
-        manifestEnabled: true,
-      }
-    }
-    if (config) {
-      $('#selected-suffix').text(config.filetype);
-      $('#manage-manifest').prop("checked", config.manifestEnabled);
-      $('#ignore-pattern').val(config.ignorePattern.join(';'));
-    }
+    $('#selected-suffix').text(config.filetype);
+    $('#manage-manifest').prop("checked", config.manifestEnabled);
+    $('#ignore-pattern').val(config.ignorePattern.join(';'));
     changeModalState('config', true);
   });
 
@@ -390,7 +381,7 @@ function showDiff(code, type) {
         let p = new RegExp(svconfig.ignorePattern[i]);
         if (svp.test(file)) return false;
       }
-      const regex = new RegExp(`(.*?)(${context.bindConfig[getId()].filetype}|\.html)$`)
+      const regex = new RegExp(`(.*?)(${getConfig().filetype}|\.html)$`)
       const match = file.match(regex);
       return match && match[1] && match[2];
     })
