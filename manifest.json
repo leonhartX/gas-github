@@ -1,5 +1,5 @@
 {
-  "version": "5.0.0",
+  "version": "5.0.1",
   "manifest_version": 2,
   "default_locale": "en",
   "name": "__MSG_appName__",
@@ -54,7 +54,6 @@
   ],
   "permissions": [
     "https://script.google.com/*",
-    "https://www.googleapis.com/oauth2/v4/token",
     "https://gitlab.com/*",
     "identity",
     "storage",
