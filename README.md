@@ -26,6 +26,23 @@ Check the basic usage with the [Demo Video](https://youtu.be/knHyof89gZ4)
 
 please check the [Home Page](https://leonhartx.github.io)
 
+# 3.Features
+ - Manage code with GitHub, GitHub Enterprise, Bitbucket and GitLab
+ - Support embedded scripts
+ - Push/Pull code between SCM and GAS
+ - Sync code to public/secret Gist
+ - Create repo, branch from GAS IDE
+ - Diff check when pull/push
+ - Choose files to pull/push
+ - Support file changed/added/deleted/renamed
+ - Add Commit comment when push
+ - Support two-factor authentication(GitHub, GitHub Enterprise only)
+ - Work with directory(with slash in filename)
+ - Support GitHub Organizations, Bitbucket Teams and GitLab Groups.
+ - Google Apps Script native ui
+ - Option to change filetype from `.gs` to `.js` when uploading to SCM
+ - Option to add ignore file pattern.
+ 
 # 4.Support
 please create an issue for any question or bug report.
 
