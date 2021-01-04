@@ -48,7 +48,7 @@ class Github {
         })
     });
     if (changed.length === 0) {
-      showLog('Nothing to do', LEVEL_WARN);
+      showLog('Nothing to do', LEVEL_INFO);
       return;
     }
 
@@ -151,7 +151,7 @@ class Github {
   pushToGist(code) {
     const files = $('.diff-file:checked').toArray().map((elem) => elem.value);
     if (files.length === 0) {
-      showLog('Nothing to do', LEVEL_WARN);
+      showLog('Nothing to do', LEVEL_INFO);
       return;
     }
     const payload = {
