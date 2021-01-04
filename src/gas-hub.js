@@ -247,7 +247,6 @@ function initPageEvent() {
     });
   })
 
-  $(document).on('click', '#config-button', () => {
     let config = getConfig();
     $('#selected-suffix').text(config.filetype);
     $('#manage-manifest').prop("checked", config.manifestEnabled);
@@ -390,7 +389,7 @@ function showDiff(code, type) {
       }
       for (let i = 0; i < config.ignorePattern.length; i++) {
         let p = new RegExp(config.ignorePattern[i]);
-        if (svp.test(file)) return false;
+        if (p.test(file)) return false;
       }
       const regex = new RegExp(`(.*?)(${getConfig().filetype}|\.html)$`)
       const match = file.match(regex);
