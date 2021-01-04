@@ -389,7 +389,7 @@ function showDiff(code, type) {
         return true;
       }
       for (let i = 0; i < config.ignorePattern.length; i++) {
-        let p = new RegExp(svconfig.ignorePattern[i]);
+        let p = new RegExp(config.ignorePattern[i]);
         if (svp.test(file)) return false;
       }
       const regex = new RegExp(`(.*?)(${getConfig().filetype}|\.html)$`)
