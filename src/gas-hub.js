@@ -5,8 +5,8 @@ let currentUrl;
 let gas;
 let scm;
 let context = {};
-const LEVEL_ERROR = 'Warning';
-const LEVEL_WARN = 'Info';
+const LEVEL_ERROR = 'Error';
+const LEVEL_WARN = 'Warn';
 const LEVEL_INFO = 'Notice';
 const observer = new MutationObserver((e) => {
   let url = window.location.href;
@@ -56,10 +56,6 @@ function load() {
         case 'not match':
           break;
         case 'nothing':
-          break;
-        case 'need relogin':
-          initLoginContent();
-          showLog('Extension has been updated, please relogin', LEVEL_WARN);
           break;
         default:
           showLog(err, LEVEL_ERROR);
@@ -351,7 +347,7 @@ function auth() {
         context.gapiToken = token;
         chrome.storage.sync.set({
           "gapiToken": token
-        }); 
+        });
         resolve(token);
       }
     });
@@ -359,6 +355,11 @@ function auth() {
 }
 
 function prepareCode() {
+  if (!getRepo()) {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Repository is not set"));
+    })
+  }
   return Promise.all([gas.getGasCode(), scm.getCode()])
     .then((data) => {
       return {
@@ -370,7 +371,7 @@ function prepareCode() {
 
 function showDiff(code, type) {
   if (Object.keys(code.scm).length === 0 && type === 'pull') {
-    showLog('There is nothing to pull', LEVEL_WARN);
+    showLog('There is nothing to pull', LEVEL_INFO);
     return;
   }
   //setting the diff model
@@ -417,7 +418,7 @@ function showDiff(code, type) {
     }, '');
 
   if (diff === '') {
-    showLog('Everything already up-to-date', LEVEL_WARN);
+    showLog('Everything already up-to-date', LEVEL_INFO);
     return;
   }
 
@@ -529,7 +530,7 @@ function updateBranch() {
       if (branches.length === 0) {
         branch = '';
         if (scm.name === 'github') {
-          showLog('This repository is empty, try to create a new branch such as [master] in Github', LEVEL_WARN);
+          showLog('This repository is empty, try to create a new branch such as [main] in Github', LEVEL_WARN);
         } else {
           showLog('This repository is empty, first create a new branch', LEVEL_WARN);
         }
@@ -621,9 +622,16 @@ function showLog(message, level = LEVEL_INFO) {
 
   $.get(chrome.runtime.getURL('content/alert.html'))
     .then((content) => {
+      const colorClass = level == LEVEL_ERROR ? "nN3Fac" : "ptNZqd";
       $("[jsname=cFQkCb]").removeClass("LcqFFc");
-      $("[jsname=cFQkCb] > [jsname=NR4lfb]").css("flex-basis", "150px")
-      $('.Vod31b').html(content.replace(/_TIMESTAMP_/g, new Date().toLocaleTimeString()).replace(/_LEVEL_/g, level).replace(/_MESSAGE_/, message));
+      const currentOffset = $("[jsname=cFQkCb] > [jsname=NR4lfb]").css("flex-basis");
+      const offset = (currentOffset === "0px" || currentOffset === "auto") ? "150px" : currentOffset;
+      $("[jsname=cFQkCb] > [jsname=NR4lfb]").css("flex-basis", offset);
+      $('.Vod31b').html(content
+        .replace(/_COLOR_CLASS_/, colorClass)
+        .replace(/_TIMESTAMP_/g, new Date().toLocaleTimeString())
+        .replace(/_LEVEL_/g, level)
+        .replace(/_MESSAGE_/, message));
     })
 }
 
