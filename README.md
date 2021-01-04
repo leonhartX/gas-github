@@ -22,6 +22,7 @@ So there will be a warn page after you choose the Google account, please go ahea
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
 
 # 2.Usage
+Check the basic usage with the [Demo Video](https://youtu.be/knHyof89gZ4)
 please check the [Home Page](https://leonhartx.github.io)
 
 # 4.Support
