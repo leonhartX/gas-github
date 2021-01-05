@@ -14,7 +14,9 @@ The extension does not use the Google Drive API, so you don't need any google au
 # **NOTICE**
 5.0.0 **ONLYL** support the new IDE, with a extra Google login to access Apps Script Projects.
 
-Currently, the Google OAuth App used is still waiting for reviewing, before it complete, there will be a warn page after you choose the Google account, please go ahead to allow the access otherwise the extension won’t work.
+[IMPORTANT]Currently, the Google OAuth App used is still waiting for reviewing, before it complete, it only can allocate 100 users, so you may failed to grant permission to the extension. Please wait for the review complete(sadly Google said it takes 4~6 weeks), or install the extension from souce code to use an old version like v4.0.3, it should still work with the legacy IDE.
+
+And before the review complete, there will be a warn page after you choose the Google account, please go ahead to allow the access otherwise the extension won’t work.
 
 # 1.Install
 Install this extension from [chrome web store](https://chrome.google.com/webstore/detail/lfjcgcmkmjjlieihflfhjopckgpelofo).
