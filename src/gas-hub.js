@@ -246,7 +246,7 @@ function initPageEvent() {
         });
     });
   })
-
+  $(document).on('click', '#config-button', () => {
     let config = getConfig();
     $('#selected-suffix').text(config.filetype);
     $('#manage-manifest').prop("checked", config.manifestEnabled);
