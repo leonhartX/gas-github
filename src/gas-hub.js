@@ -246,7 +246,6 @@ function initPageEvent() {
         });
     });
   })
-
   $(document).on('click', '#config-button', () => {
     let config = getConfig();
     $('#selected-suffix').text(config.filetype);
@@ -389,8 +388,8 @@ function showDiff(code, type) {
         return true;
       }
       for (let i = 0; i < config.ignorePattern.length; i++) {
-        let p = new RegExp(svconfig.ignorePattern[i]);
-        if (svp.test(file)) return false;
+        let p = new RegExp(config.ignorePattern[i]);
+        if (p.test(file)) return false;
       }
       const regex = new RegExp(`(.*?)(${getConfig().filetype}|\.html)$`)
       const match = file.match(regex);
