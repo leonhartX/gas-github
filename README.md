@@ -24,7 +24,7 @@ Install this extension from [chrome web store](https://chrome.google.com/webstor
 # 2.Usage
 Check the basic usage with the [Demo Video](https://youtu.be/knHyof89gZ4)
 
-please check the [Home Page](https://leonhartx.github.io)
+Check the detail in [Home Page](https://leonhartx.github.io)
 
 # 3.Features
  - Manage code with GitHub, GitHub Enterprise, Bitbucket and GitLab
