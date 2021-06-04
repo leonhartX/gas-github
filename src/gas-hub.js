@@ -534,7 +534,13 @@ function updateBranch() {
           showLog('This repository is empty, first create a new branch', LEVEL_WARN);
         }
       } else if ($.inArray(branch, branches.map(branch => branch.name)) < 0) {
-        branch = ($.inArray("master", branches.map(branch => branch.name)) >= 0) ? 'master' : branches[0].name;
+        if ($.inArray("master", branches.map(branch => branch.name)) >= 0) {
+          branch = 'master';
+        } else if ($.inArray("main", branches.map(branch => branch.name)) >= 0) {
+          branch = 'main';
+        } else {
+          branch = branches[0].name;
+        }
       }
       $('#scm-bind-branch').text(branch);
       //update context and storage
