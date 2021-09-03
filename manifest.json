@@ -54,7 +54,6 @@
   ],
   "permissions": [
     "https://script.google.com/*",
-    "https://gitlab.com/*",
     "identity",
     "storage"
   ],
