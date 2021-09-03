@@ -47,7 +47,7 @@ $(() => {
             userLink = '';
             tokenLink = '';
           } else {
-            domain = `@${match[1]}`;
+            domain = `@${match[1].match(/\w+\.\w+(?=\/|$)/)}`;
             userLink = `https://${match[1]}/${user}`;
             tokenLink = `https://${match[1]}/profile/personal_access_tokens`;
           }
@@ -67,7 +67,7 @@ $(() => {
             userLink = '';
             tokenLink = '';
           } else {
-            domain = `@${match[1]}`;
+            domain = `@${match[1].match(/\w+\.\w+(?=\/|$)/)}`;
             userLink = `https://${match[1]}/${item.user}`;
             tokenLink = `https://${match[1]}/settings/tokens`;
           }
