@@ -64,8 +64,9 @@ class Gitlab {
           }
         }));
       }
+      let repoId = getRepo().id || this.namesToIds.repos[getRepo().fullName];
       $.ajax({
-          url: `${this.baseUrl}/projects/${getRepo().id}/repository/commits`,
+          url: `${this.baseUrl}/projects/${repoId}/repository/commits`,
           headers: this.tokenHeader,
           contentType: 'application/json',
           method: 'POST',
@@ -117,9 +118,10 @@ class Gitlab {
   }
 
   getCode() {
+    let repoId = getRepo().id || this.namesToIds.repos[getRepo().fullName];
     return new Promise((resolve, reject) => {
         return $.getJSON(
-            `${this.baseUrl}/projects/${getRepo().id}/repository/tree?ref=${getBranch()}&recursive=true&${this.tokenParam}`, {}
+            `${this.baseUrl}/projects/${repoId}/repository/tree?ref=${getBranch()}&recursive=true&${this.tokenParam}`, {}
           )
           .then(resolve)
           .fail(reject)
@@ -132,7 +134,7 @@ class Gitlab {
           })
           .map(tree => {
             return new Promise((resolve, reject) => {
-              $.getJSON(`${this.baseUrl}/projects/${getRepo().id}/repository/files/${encodeURIComponent(tree.path)}?ref=${getBranch()}&${this.tokenParam}`, {})
+              $.getJSON(`${this.baseUrl}/projects/${repoId}/repository/files/${encodeURIComponent(tree.path)}?ref=${getBranch()}&${this.tokenParam}`, {})
                 .then((content) => {
                   resolve({
                     file: tree.path,
@@ -252,9 +254,10 @@ class Gitlab {
       ref: getBranch()
     };
     if (!branch || branch === '') return;
+    let repoId = getRepo().id || this.namesToIds.repos[getRepo().fullName];
     return new Promise((resolve, reject) => {
         return $.ajax({
-            url: `${this.baseUrl}/projects/${getRepo().id}/repository/branches`,
+            url: `${this.baseUrl}/projects/${repoId}/repository/branches`,
             headers: this.tokenHeader,
             method: 'POST',
             crossDomain: true,
