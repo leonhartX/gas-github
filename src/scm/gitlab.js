@@ -220,7 +220,8 @@ class Gitlab {
       .then(response => {
         const repo = {
           fullName: response.path_with_namespace,
-          id: response.id
+          id: response.id,
+          scm: this.name
         };
         Object.assign(context.bindRepo, {
           [getId()]: repo

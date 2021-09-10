@@ -100,6 +100,9 @@ function initContext() {
         context.gapiToken = item.gapiToken;
         scm = createSCM(item);
         context.bindRepo = item.bindRepo || {};
+        if (context.bindRepo[getId()].scm !== scm.name) {
+          delete context.bindRepo[getId()]
+        }
         context.bindBranch = item.bindBranch || {};
         context.bindType = item.bindType || {};
         context.bindPattern = item.bindPattern || {};
@@ -298,7 +301,8 @@ function initPageEvent() {
         const fullName = target.attr('data');
         content = {
           fullName: fullName,
-          gist: fullName === 'gist'
+          gist: fullName === 'gist',
+          scm: scm.name
         }
         label = fullName;
         break;

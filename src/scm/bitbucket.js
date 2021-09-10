@@ -225,7 +225,8 @@ class Bitbucket {
       })
       .then(response => {
         const repo = {
-          fullName: response.full_name
+          fullName: response.full_name,
+          scm: this.name
         };
         Object.assign(context.bindRepo, {
           [getId()]: repo
