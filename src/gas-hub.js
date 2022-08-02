@@ -93,7 +93,7 @@ function initContext() {
         } else if (!item.gapiToken) {
           reject(new Error('need auth'));
         } else {
-          showLog('Updateing Repository');
+          showLog('Updating Repository');
         }
         gas = new ScriptApi();
         context.gapiRefreshToken = item.gapiRefreshToken;
