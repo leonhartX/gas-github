@@ -49,12 +49,12 @@ $(() => {
           } else {
             domain = `@${match[1].match(/\w+\.\w+(?=\/|$)/)}`;
             userLink = `https://${match[1]}/${user}`;
-            tokenLink = `https://${match[1]}/profile/personal_access_tokens`;
+            tokenLink = `https://${match[1]}/-/profile/personal_access_tokens`;
           }
         } else {
           domain = '@gitlab.com';
           userLink = `https://gitlab.com/${user}`;
-          tokenLink = `https://gitlab.com/profile/personal_access_tokens`;
+          tokenLink = `https://gitlab.com/profile/-/personal_access_tokens`;
         }
       } else {
         domain = '@Github.com';
@@ -74,7 +74,7 @@ $(() => {
         }
       }
 
-      $('#login-user').text(`${user}${domain}`).attr('href', userLink);
+      $('#login-user').text(`${user}`).attr('href', userLink);
       $('#token').attr('href', tokenLink);
     })
     .then(() => {
@@ -89,15 +89,12 @@ function getGithubParam() {
   const scm = 'github';
   const username = $('#username').val();
   const token = $('#accesstoken').val();
-  // const apiKey = $('#api-key').val();
-  const apiKey = null;
   const baseUrl = `https://api.github.com`;
   const otp = $('#otp').val();
   return {
     scm,
     username,
     token,
-    apiKey,
     baseUrl,
     otp
   };
@@ -108,8 +105,6 @@ function getGHEParam() {
   const username = $('#ghe-username').val();
   const password = $('#ghe-password').val();
   const token = $('#ghe-accesstoken').val();
-  // const apiKey = $('#ghe-api-key').val();
-  const apiKey = null;
   const baseUrl = $('#ghe-url').val() + '/api/v3';
   const otp = $('#ghe-otp').val();
   return {
@@ -117,7 +112,6 @@ function getGHEParam() {
     username,
     password,
     token,
-    apiKey,
     baseUrl,
     otp
   };
@@ -127,14 +121,11 @@ function getBitbucketParam() {
   const scm = 'bitbucket';
   const username = $('#bitbucket-email').val();
   const password = $('#bitbucket-password').val();
-  // const apiKey = $('#bitbucket-api-key').val();
-  const apiKey = null;
   const baseUrl = `https://api.bitbucket.org/2.0`;
   return {
     scm,
     username,
     password,
-    apiKey,
     baseUrl
   }
 }
@@ -145,8 +136,6 @@ function getGitLabParam() {
   const password = $('#gitlab-password').val();
   const token = $('#gitlab-accesstoken').val();
   const tokenType = (token && token.length > 0) ? 'personalToken' : 'oAuth';
-  // const apiKey = $('#gitlab-api-key').val();
-  const apiKey = null;
   const baseUrl = ($('#gitlab-url').val() || 'https://gitlab.com') + '/api/v4';
   return {
     scm,
@@ -154,7 +143,6 @@ function getGitLabParam() {
     password,
     tokenType,
     token,
-    apiKey,
     baseUrl
   }
 }
@@ -166,35 +154,7 @@ function addCred(param) {
   if (param.password === '' && param.token === '') {
     return;
   }
-
-  if (param.apiKey && param.apiKey !== '') {
-    const payload = {
-      code: param.apiKey,
-      client_id: "971735641612-am059p55sofdp30p2t4djecn72l6kmpf.apps.googleusercontent.com",
-      client_secret: __SECRET__,
-      redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
-      grant_type: "authorization_code",
-      access_type: "offline"
-    }
-    $.ajax({
-        url: "https://www.googleapis.com/oauth2/v4/token",
-        method: 'POST',
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(payload)
-      })
-      .done(response => {
-        chrome.storage.sync.set({
-          gapiRefreshToken: response.refresh_token,
-          gapiToken: response.access_token
-        }, () => {
-          login(param);
-        });
-      });
-  } else {
-    login(param);
-  }
-
+  login(param);
 }
 
 function login(param) {
@@ -292,9 +252,7 @@ function loginBitbucket(param) {
   const username = param.username;
   const password = param.password;
   const baseUrl = param.baseUrl;
-  const headers = {
-    Authorization: `Basic RmZIVE02ZnN5NDJQQlJDRjRQOmVDZDN0TTh5TUpUeTJSMld4bTJWUzZoYWVKdnpuNzdw`
-  }
+  const headers = {}
   $.ajax({
       url: 'https://bitbucket.org/site/oauth2/access_token',
       headers: headers,
