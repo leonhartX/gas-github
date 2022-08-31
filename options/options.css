@@ -52,7 +52,7 @@
 
 .form .message,
 .form .warning {
-  margin: 15px 0 0;
+  margin: 15px;
   color: #b3b3b3;
   font-size: 14px;
 }
