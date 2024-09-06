@@ -1,6 +1,6 @@
 {
-  "version": "5.0.5",
-  "manifest_version": 2,
+  "version": "5.0.6",
+  "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
   "short_name": "gas-github",
@@ -12,9 +12,8 @@
     "128": "icon/icon.png"
   },
   "background": {
-    "scripts": [
-      "background/background.js"
-    ]
+    "service_worker": "background/background.js",
+    "type": "module"
   },
   "options_ui": {
     "page": "options/options.html"
@@ -43,19 +42,33 @@
       "run_at": "document_end"
     }
   ],
-  "content_security_policy":"script-src 'self' https://apis.google.com; object-src 'self'",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "web_accessible_resources": [
-    "gas-hub.js",
-    "options/options.html",
-    "content/alert.html",
-    "content/button.html",
-    "content/modal.html",
-    "content/login.html"
+    {
+      "resources": [
+        "gas-hub.js",
+        "content/alert.html",
+        "content/button.html",
+        "content/modal.html",
+        "content/login.html"
+      ],
+      "matches": ["https://script.google.com/*"]
+    },
+    {
+      "resources": [
+        "options/options.html"
+      ],
+      "matches": ["*://*/*"]
+    }
   ],
   "permissions": [
-    "https://script.google.com/*",
     "identity",
     "storage"
+  ],
+  "host_permissions": [
+    "https://script.google.com/*"
   ],
   "oauth2": {
     "client_id": "971735641612-plgfavrj0vhpsd1brvquo4qt7m91ujs6.apps.googleusercontent.com",
