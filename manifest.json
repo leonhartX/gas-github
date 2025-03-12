@@ -32,7 +32,8 @@
         "src/scm/bitbucket.js",
         "src/scm/gitlab.js",
         "src/gas/script-api.js",
-        "src/gas-hub.js"
+        "src/gas-hub.js",
+        "src/autocomplete.js"
       ],
       "css":[
         "lib/diff2html.css",
@@ -52,7 +53,8 @@
         "content/alert.html",
         "content/button.html",
         "content/modal.html",
-        "content/login.html"
+        "content/login.html",
+        "src/autocomplete.js"
       ],
       "matches": ["https://script.google.com/*"]
     },
